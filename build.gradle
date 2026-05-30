@@ -1,0 +1,106 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '4.0.1'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.server.application'
+version = '0.0.1-SNAPSHOT'
+description = 'realestate-api'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+
+	// Persistence
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	runtimeOnly 'org.postgresql:postgresql'
+	implementation 'org.springframework.boot:spring-boot-starter-restclient'
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+	// Spring MVC
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+
+	// Actuator (헬스체크)
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+	implementation 'com.fasterxml.jackson.core:jackson-databind'
+	implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml'
+
+	// MapStruct
+	implementation 'org.mapstruct:mapstruct:1.6.3'
+	annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+
+    // HTML Parsing (Scraping)
+    implementation 'org.jsoup:jsoup:1.17.2'
+
+	// Google Cloud Translation
+	implementation 'com.google.cloud:google-cloud-translate:2.56.0'
+
+	//Java CV
+	implementation 'org.bytedeco:javacv-platform:1.5.10'
+
+	// Lombok — must come BEFORE MapStruct annotation processor
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
+
+	// MapStruct annotation processor — after Lombok
+	annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+	// Swagger / OpenAPI
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.4'
+
+	// Lombok-MapStruct Binding
+	annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
+
+	// MapStruct
+	implementation 'org.mapstruct:mapstruct:1.6.3'
+	annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-restclient-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+	// JWT
+	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+
+	implementation 'com.nimbusds:nimbus-jose-jwt:10.0.2'
+
+	// Firebase Admin SDK (Push Notification)
+	implementation 'com.google.firebase:firebase-admin:9.2.0'
+
+	// Apple IAP
+	implementation 'com.apple.itunes.storekit:app-store-server-library:3.3.0'
+
+	// Google IAP
+	implementation 'com.google.apis:google-api-services-androidpublisher:v3-rev20260318-2.0.0'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+//	testLogging {
+//		showStandardStreams = true
+//	}
+}

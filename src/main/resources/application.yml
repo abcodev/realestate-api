@@ -1,0 +1,61 @@
+server:
+  port: ${APP_PORT:18080}
+  servlet:
+    context-path: /realestate
+  tomcat:
+    connection-timeout: 15s
+    keep-alive-timeout: 60s
+
+spring:
+  application:
+    name: realestate-api
+  profiles:
+    active: prod
+  jpa:
+    hibernate:
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
+    show-sql: ${SPRING_JPA_SHOW_SQL:true}
+    properties:
+      hibernate:
+        format_sql: ${SPRING_JPA_FORMAT_SQL:false}
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_batch_fetch_size: 1000
+        jdbc:
+          batch_size: 1000
+        order_inserts: true
+        order_updates: true
+      jdbc:
+        time_zone: Asia/Seoul
+
+# Actuator — health 엔드포인트만 노출
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+
+
+# 번역 프로바이더 선택: GOOGLE (Google Cloud Translation) 또는 GEMINI (Gemini API, 저비용)
+translation:
+  provider: ${TRANSLATION_PROVIDER:GEMINI}
+
+
+# Firebase (Push Notification)
+firebase:
+  service-account-key: ${FIREBASE_SERVICE_ACCOUNT_KEY:firebase-service-account.json}
+
+# In-App Purchase (IAP) Settings
+iap:
+  apple:
+    issuer-id: ${IAP_APPLE_ISSUER_ID:}
+    key-id: ${IAP_APPLE_KEY_ID:}
+    bundle-id: ${IAP_APPLE_BUNDLE_ID:}
+    private-key: ${IAP_APPLE_PRIVATE_KEY:}
+    sandbox: ${IAP_APPLE_SANDBOX:true}
+  google:
+    package-name: ${IAP_GOOGLE_PACKAGE_NAME:}
+    credentials-json: ${IAP_GOOGLE_CREDENTIALS_JSON:}

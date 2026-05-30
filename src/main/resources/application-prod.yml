@@ -1,0 +1,65 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+# 외부 API
+external:
+  api:
+    realestate:
+      service-key: ${REALESTATE_SERVICE_KEY}
+      deals-base-url: http://apis.data.go.kr/1613000
+      pblanc-base-url: https://api.odcloud.kr/api/ApplyhomeInfoDetailSvc/v1
+      vworld-service-key: ${VWORLD_SERVICE_KEY}
+
+# OAuth
+oauth:
+  kakao:
+    client-id: ${KAKAO_CLIENT_ID}
+    redirect-uri: ${KAKAO_REDIRECT_URI}
+
+# JWT
+jwt:
+  secret: ${JWT_SECRET}
+
+# Apple Login
+apple:
+  team-id: ${APPLE_TEAM_ID}
+  client-id: ${APPLE_CLIENT_ID}
+  key-id: ${APPLE_KEY_ID}
+  private-key: ${APPLE_PRIVATE_KEY}
+
+# Google Translation
+google:
+  cloud:
+    translation:
+      api-key: ${GOOGLE_TRANSLATION_API_KEY}
+
+# Sports API
+api-sports:
+  key: ${API_SPORTS_KEY}
+
+thesportsdb:
+  key: ${THESPORTSDB_KEY}
+
+# AI
+ai:
+  openai:
+    key: ${OPENAI_API_KEY}
+  gemini:
+    key: ${GEMINI_API_KEY}
+
+# Firebase
+firebase:
+  service-account-key: ${FIREBASE_SERVICE_ACCOUNT_KEY:firebase-service-account.json}
