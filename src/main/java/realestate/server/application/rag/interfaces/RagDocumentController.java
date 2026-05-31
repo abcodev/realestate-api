@@ -6,10 +6,13 @@ import lombok.RequiredArgsConstructor;
 import realestate.server.application.common.response.ApiResponse;
 import realestate.server.application.rag.application.RagDocumentBuildService;
 import realestate.server.application.rag.application.RagEmbeddingBuildService;
+import realestate.server.application.rag.application.RagIndexStatsService;
 import realestate.server.application.rag.application.RagSyncService;
 import realestate.server.application.rag.interfaces.dto.RagDocumentBuildResponse;
 import realestate.server.application.rag.interfaces.dto.RagEmbeddingBuildResponse;
+import realestate.server.application.rag.interfaces.dto.RagIndexStatsResponse;
 import realestate.server.application.rag.interfaces.dto.RagSyncResponse;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -24,6 +27,7 @@ public class RagDocumentController {
     private final RagDocumentBuildService buildService;
     private final RagEmbeddingBuildService embeddingBuildService;
     private final RagSyncService syncService;
+    private final RagIndexStatsService indexStatsService;
 
     @PostMapping("/deals")
     @Operation(summary = "실거래가 RAG 문서 생성/갱신", description = "real_estate_deals 데이터를 rag_document 문서로 변환해 upsert합니다. 내용이 바뀌면 기존 embedding을 무효화합니다. limit이 0 이하이면 전체를 처리합니다.")
@@ -51,5 +55,13 @@ public class RagDocumentController {
             @RequestParam(required = false) String model) {
         return ApiResponse.success(RagSyncResponse.from(
                 syncService.syncDealDocumentsAndEmbeddings(documentLimit, embeddingLimit, provider, model)));
+    }
+
+    @GetMapping("/stats")
+    @Operation(summary = "RAG 인덱스 상태 조회", description = "전체 RAG 문서 수, 선택한 embedding provider/model 기준 누락 수, provider/model별 embedding 개수를 조회합니다.")
+    public ApiResponse<RagIndexStatsResponse> getIndexStats(
+            @RequestParam(required = false) String provider,
+            @RequestParam(required = false) String model) {
+        return ApiResponse.success(RagIndexStatsResponse.from(indexStatsService.getStats(provider, model)));
     }
 }

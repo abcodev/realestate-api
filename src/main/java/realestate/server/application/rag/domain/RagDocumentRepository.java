@@ -10,5 +10,12 @@ public interface RagDocumentRepository {
 
     int saveEmbedding(Long documentId, EmbeddingModelProfile profile, List<Double> embedding);
 
-    List<RagSearchResult> searchByEmbedding(EmbeddingModelProfile profile, List<Double> embedding, int topK);
+    List<RagSearchResult> searchByEmbedding(
+            EmbeddingModelProfile profile,
+            List<Double> embedding,
+            int topK,
+            RagSearchCondition condition
+    );
+
+    RagIndexStats getIndexStats(EmbeddingModelProfile profile);
 }

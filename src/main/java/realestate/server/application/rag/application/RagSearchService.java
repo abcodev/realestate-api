@@ -8,6 +8,7 @@ import org.springframework.util.StringUtils;
 import realestate.server.application.rag.domain.EmbeddingClient;
 import realestate.server.application.rag.domain.EmbeddingModelProfile;
 import realestate.server.application.rag.domain.RagDocumentRepository;
+import realestate.server.application.rag.domain.RagSearchCondition;
 import realestate.server.application.rag.domain.RagSearchResult;
 
 import java.util.List;
@@ -24,7 +25,13 @@ public class RagSearchService {
     private final RagDocumentRepository ragDocumentRepository;
     private final EmbeddingClientRegistry embeddingClientRegistry;
 
-    public List<RagSearchResult> search(String query, Integer topK, String provider, String model) {
+    public List<RagSearchResult> search(
+            String query,
+            Integer topK,
+            String provider,
+            String model,
+            RagSearchCondition condition
+    ) {
         if (!StringUtils.hasText(query)) {
             throw new IllegalArgumentException("검색어는 비어 있을 수 없습니다.");
         }
@@ -33,7 +40,12 @@ public class RagSearchService {
         EmbeddingModelProfile profile = embeddingClientRegistry.resolveProfile(provider, model);
         EmbeddingClient embeddingClient = embeddingClientRegistry.resolve(profile.provider());
         List<Double> queryEmbedding = embeddingClient.embed(profile.model(), List.of(query)).getFirst();
-        List<RagSearchResult> results = ragDocumentRepository.searchByEmbedding(profile, queryEmbedding, normalizedTopK);
+        List<RagSearchResult> results = ragDocumentRepository.searchByEmbedding(
+                profile,
+                queryEmbedding,
+                normalizedTopK,
+                condition
+        );
 
         log.info("RAG search completed - provider: {}, model: {}, query: {}, topK: {}, resultCount: {}",
                 profile.provider(), profile.model(), query, normalizedTopK, results.size());

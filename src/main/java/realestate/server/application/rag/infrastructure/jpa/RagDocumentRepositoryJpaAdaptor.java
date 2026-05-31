@@ -6,8 +6,14 @@ import org.springframework.stereotype.Repository;
 import realestate.server.application.rag.domain.EmbeddingModelProfile;
 import realestate.server.application.rag.domain.RagDocumentForEmbedding;
 import realestate.server.application.rag.domain.RagDocumentRepository;
+import realestate.server.application.rag.domain.RagIndexStats;
+import realestate.server.application.rag.domain.RagSearchCondition;
 import realestate.server.application.rag.domain.RagSearchResult;
 
+import java.sql.Date;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.List;
 
 @Repository
@@ -165,29 +171,87 @@ public class RagDocumentRepositoryJpaAdaptor implements RagDocumentRepository {
     }
 
     @Override
-    public List<RagSearchResult> searchByEmbedding(EmbeddingModelProfile profile, List<Double> embedding, int topK) {
+    public List<RagSearchResult> searchByEmbedding(
+            EmbeddingModelProfile profile,
+            List<Double> embedding,
+            int topK,
+            RagSearchCondition condition
+    ) {
         String queryVector = RagVectorLiteralFormatter.toVectorLiteral(embedding);
+        List<Object> args = new ArrayList<>();
 
-        return jdbcTemplate.query("""
-                        SELECT
-                            rd.id AS document_id,
-                            re.provider AS embedding_provider,
-                            re.model AS embedding_model,
-                            rd.title,
-                            rd.content,
-                            rd.apartment_name,
-                            rd.region,
-                            rd.source_type,
-                            rd.source_id,
-                            (re.embedding <=> ?::vector) AS distance
-                        FROM rag_embedding re
-                        JOIN rag_document rd ON rd.id = re.document_id
-                        WHERE re.provider = ?
-                        AND re.model = ?
-                        AND re.dimension = ?
-                        ORDER BY re.embedding <=> ?::vector
-                        LIMIT ?
-                        """,
+        StringBuilder sql = new StringBuilder("""
+                WITH scored AS (
+                    SELECT
+                        rd.id AS document_id,
+                        re.provider AS embedding_provider,
+                        re.model AS embedding_model,
+                        rd.title,
+                        rd.content,
+                        rd.apartment_name,
+                        rd.region,
+                        rd.source_type,
+                        rd.source_id,
+                        make_date(d.deal_year, d.deal_month, d.deal_day) AS deal_date,
+                        d.exclu_use_area,
+                        NULLIF(regexp_replace(d.deal_amount, '[^0-9]', '', 'g'), '')::bigint AS deal_amount,
+                        d.floor,
+                        d.build_year,
+                        (re.embedding <=> ?::vector) AS distance,
+                        GREATEST(0.0, 1.0 - (re.embedding <=> ?::vector)) AS similarity,
+                        CASE
+                            WHEN d.deal_year IS NULL OR d.deal_month IS NULL OR d.deal_day IS NULL THEN 0.0
+                            ELSE GREATEST(0.0, 1.0 - (CURRENT_DATE - make_date(d.deal_year, d.deal_month, d.deal_day))::double precision / 365.0)
+                        END AS recency_score
+                    FROM rag_embedding re
+                    JOIN rag_document rd ON rd.id = re.document_id
+                    LEFT JOIN real_estate_deals d ON rd.source_type = 'DEAL' AND rd.source_id = d.id
+                    WHERE re.provider = ?
+                    AND re.model = ?
+                    AND re.dimension = ?
+                """);
+
+        args.add(queryVector);
+        args.add(queryVector);
+        args.add(profile.provider().name());
+        args.add(profile.model());
+        args.add(embedding.size());
+
+        appendFilters(sql, args, condition);
+
+        boolean recentFirst = condition != null && Boolean.TRUE.equals(condition.recentFirst());
+        sql.append("""
+                )
+                SELECT
+                    document_id,
+                    embedding_provider,
+                    embedding_model,
+                    title,
+                    content,
+                    apartment_name,
+                    region,
+                    source_type,
+                    source_id,
+                    deal_date,
+                    exclu_use_area,
+                    deal_amount,
+                    floor,
+                    build_year,
+                    distance,
+                    similarity,
+                    recency_score,
+                    CASE
+                        WHEN ? THEN similarity * 0.70 + recency_score * 0.30
+                        ELSE similarity
+                    END AS final_score
+                FROM scored
+                ORDER BY final_score DESC, deal_date DESC NULLS LAST
+                LIMIT ?
+                """);
+        args.add(recentFirst);
+        args.add(topK);
+
+        return jdbcTemplate.query(sql.toString(),
                 (rs, rowNum) -> {
                     double distance = rs.getDouble("distance");
                     return new RagSearchResult(
@@ -200,15 +264,132 @@ public class RagDocumentRepositoryJpaAdaptor implements RagDocumentRepository {
                             rs.getString("region"),
                             rs.getString("source_type"),
                             rs.getLong("source_id"),
+                            rs.getString("deal_date"),
+                            rs.getString("exclu_use_area"),
+                            getNullableLong(rs, "deal_amount"),
+                            rs.getString("floor"),
+                            rs.getString("build_year"),
                             distance,
-                            1.0 - distance
+                            rs.getDouble("similarity"),
+                            rs.getDouble("recency_score"),
+                            rs.getDouble("final_score")
                     );
                 },
-                queryVector,
-                profile.provider().name(),
-                profile.model(),
-                embedding.size(),
-                queryVector,
-                topK);
+                args.toArray());
+    }
+
+    @Override
+    public RagIndexStats getIndexStats(EmbeddingModelProfile profile) {
+        Long documentCount = jdbcTemplate.queryForObject("SELECT count(*) FROM rag_document", Long.class);
+        Long changedDocumentCount = jdbcTemplate.queryForObject("""
+                SELECT count(*)
+                FROM rag_document
+                WHERE content_hash <> md5(content)
+                """, Long.class);
+        Long missingEmbeddingCount = jdbcTemplate.queryForObject("""
+                SELECT count(*)
+                FROM rag_document rd
+                WHERE NOT EXISTS (
+                    SELECT 1
+                    FROM rag_embedding re
+                    WHERE re.document_id = rd.id
+                    AND re.provider = ?
+                    AND re.model = ?
+                )
+                """, Long.class, profile.provider().name(), profile.model());
+        List<RagIndexStats.EmbeddingStats> embeddings = jdbcTemplate.query("""
+                        SELECT provider, model, dimension, count(*) AS count
+                        FROM rag_embedding
+                        GROUP BY provider, model, dimension
+                        ORDER BY provider, model, dimension
+                        """,
+                (rs, rowNum) -> new RagIndexStats.EmbeddingStats(
+                        rs.getString("provider"),
+                        rs.getString("model"),
+                        rs.getInt("dimension"),
+                        rs.getLong("count")
+                ));
+
+        return new RagIndexStats(
+                documentCount == null ? 0 : documentCount,
+                changedDocumentCount == null ? 0 : changedDocumentCount,
+                missingEmbeddingCount == null ? 0 : missingEmbeddingCount,
+                embeddings
+        );
+    }
+
+    private void appendFilters(StringBuilder sql, List<Object> args, RagSearchCondition condition) {
+        if (condition == null) {
+            return;
+        }
+        if (hasText(condition.region())) {
+            sql.append(" AND (rd.region ILIKE ? OR d.umd_name ILIKE ? OR d.estate_agent_sgg_name ILIKE ?) ");
+            String value = like(condition.region());
+            args.add(value);
+            args.add(value);
+            args.add(value);
+        }
+        if (hasText(condition.apartmentName())) {
+            sql.append(" AND (rd.apartment_name ILIKE ? OR d.apt_name ILIKE ?) ");
+            String value = like(condition.apartmentName());
+            args.add(value);
+            args.add(value);
+        }
+
+        LocalDate fromDate = toStartDate(condition.fromYear(), condition.fromMonth());
+        if (fromDate != null) {
+            sql.append(" AND make_date(d.deal_year, d.deal_month, d.deal_day) >= ? ");
+            args.add(Date.valueOf(fromDate));
+        }
+
+        LocalDate toDate = toEndDate(condition.toYear(), condition.toMonth());
+        if (toDate != null) {
+            sql.append(" AND make_date(d.deal_year, d.deal_month, d.deal_day) <= ? ");
+            args.add(Date.valueOf(toDate));
+        }
+        if (condition.minPrice() != null) {
+            sql.append(" AND NULLIF(regexp_replace(d.deal_amount, '[^0-9]', '', 'g'), '')::bigint >= ? ");
+            args.add(condition.minPrice());
+        }
+        if (condition.maxPrice() != null) {
+            sql.append(" AND NULLIF(regexp_replace(d.deal_amount, '[^0-9]', '', 'g'), '')::bigint <= ? ");
+            args.add(condition.maxPrice());
+        }
+        if (condition.minArea() != null) {
+            sql.append(" AND NULLIF(d.exclu_use_area, '')::double precision >= ? ");
+            args.add(condition.minArea());
+        }
+        if (condition.maxArea() != null) {
+            sql.append(" AND NULLIF(d.exclu_use_area, '')::double precision <= ? ");
+            args.add(condition.maxArea());
+        }
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
+    }
+
+    private String like(String value) {
+        return "%" + value.trim() + "%";
+    }
+
+    private LocalDate toStartDate(Integer year, Integer month) {
+        if (year == null) {
+            return null;
+        }
+        return YearMonth.of(year, month == null ? 1 : month).atDay(1);
+    }
+
+    private LocalDate toEndDate(Integer year, Integer month) {
+        if (year == null) {
+            return null;
+        }
+        YearMonth yearMonth = YearMonth.of(year, month == null ? 12 : month);
+        return yearMonth.atEndOfMonth();
+    }
+
+    private Long getNullableLong(java.sql.ResultSet rs, String columnName) throws java.sql.SQLException {
+        long value = rs.getLong(columnName);
+        return rs.wasNull() ? null : value;
     }
 }

@@ -10,7 +10,14 @@ public record RagSearchResult(
         String region,
         String sourceType,
         Long sourceId,
+        String dealDate,
+        String exclusiveArea,
+        Long dealAmount,
+        String floor,
+        String buildYear,
         double distance,
-        double similarity
+        double similarity,
+        double recencyScore,
+        double finalScore
 ) {
 }

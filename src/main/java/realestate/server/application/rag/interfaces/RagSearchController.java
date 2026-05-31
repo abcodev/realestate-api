@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import realestate.server.application.common.response.ApiResponse;
 import realestate.server.application.rag.application.RagSearchService;
 import realestate.server.application.rag.interfaces.dto.RagSearchRequest;
+import realestate.server.application.rag.interfaces.dto.RagSearchConditionMapper;
 import realestate.server.application.rag.interfaces.dto.RagSearchResponse;
 
 import java.util.List;
@@ -30,7 +31,8 @@ public class RagSearchController {
                         request.query(),
                         request.topK(),
                         request.embeddingProvider(),
-                        request.embeddingModel()).stream()
+                        request.embeddingModel(),
+                        RagSearchConditionMapper.from(request)).stream()
                 .map(RagSearchResponse::from)
                 .toList());
     }

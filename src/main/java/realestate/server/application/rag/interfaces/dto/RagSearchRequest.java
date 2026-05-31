@@ -14,6 +14,28 @@ public record RagSearchRequest(
 
         String embeddingProvider,
 
-        String embeddingModel
+        String embeddingModel,
+
+        String region,
+
+        String apartmentName,
+
+        Integer fromYear,
+
+        Integer fromMonth,
+
+        Integer toYear,
+
+        Integer toMonth,
+
+        Long minPrice,
+
+        Long maxPrice,
+
+        Double minArea,
+
+        Double maxArea,
+
+        Boolean recentFirst
 ) {
 }

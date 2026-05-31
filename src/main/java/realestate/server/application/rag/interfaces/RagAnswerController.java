@@ -12,6 +12,7 @@ import realestate.server.application.common.response.ApiResponse;
 import realestate.server.application.rag.application.RagAnswerService;
 import realestate.server.application.rag.interfaces.dto.RagAskRequest;
 import realestate.server.application.rag.interfaces.dto.RagAnswerResponse;
+import realestate.server.application.rag.interfaces.dto.RagSearchConditionMapper;
 
 @RestController
 @RequiredArgsConstructor
@@ -30,6 +31,7 @@ public class RagAnswerController {
                 request.embeddingProvider(),
                 request.embeddingModel(),
                 request.answerProvider(),
-                request.answerModel())));
+                request.answerModel(),
+                RagSearchConditionMapper.from(request))));
     }
 }

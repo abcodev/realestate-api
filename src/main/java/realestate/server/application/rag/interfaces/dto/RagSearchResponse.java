@@ -12,8 +12,15 @@ public record RagSearchResponse(
         String region,
         String sourceType,
         Long sourceId,
+        String dealDate,
+        String exclusiveArea,
+        Long dealAmount,
+        String floor,
+        String buildYear,
         double distance,
-        double similarity
+        double similarity,
+        double recencyScore,
+        double finalScore
 ) {
     public static RagSearchResponse from(RagSearchResult result) {
         return new RagSearchResponse(
@@ -26,8 +33,15 @@ public record RagSearchResponse(
                 result.region(),
                 result.sourceType(),
                 result.sourceId(),
+                result.dealDate(),
+                result.exclusiveArea(),
+                result.dealAmount(),
+                result.floor(),
+                result.buildYear(),
                 result.distance(),
-                result.similarity()
+                result.similarity(),
+                result.recencyScore(),
+                result.finalScore()
         );
     }
 }

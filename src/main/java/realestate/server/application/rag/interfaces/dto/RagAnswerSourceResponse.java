@@ -9,8 +9,14 @@ public record RagAnswerSourceResponse(
         String region,
         String sourceType,
         Long sourceId,
+        String dealDate,
+        String exclusiveArea,
+        Long dealAmount,
+        String floor,
+        String buildYear,
         double distance,
-        double similarity
+        double similarity,
+        double finalScore
 ) {
     public static RagAnswerSourceResponse from(RagAnswerSource source) {
         return new RagAnswerSourceResponse(
@@ -20,8 +26,14 @@ public record RagAnswerSourceResponse(
                 source.region(),
                 source.sourceType(),
                 source.sourceId(),
+                source.dealDate(),
+                source.exclusiveArea(),
+                source.dealAmount(),
+                source.floor(),
+                source.buildYear(),
                 source.distance(),
-                source.similarity()
+                source.similarity(),
+                source.finalScore()
         );
     }
 }

@@ -18,6 +18,28 @@ public record RagAskRequest(
 
         String answerProvider,
 
-        String answerModel
+        String answerModel,
+
+        String region,
+
+        String apartmentName,
+
+        Integer fromYear,
+
+        Integer fromMonth,
+
+        Integer toYear,
+
+        Integer toMonth,
+
+        Long minPrice,
+
+        Long maxPrice,
+
+        Double minArea,
+
+        Double maxArea,
+
+        Boolean recentFirst
 ) {
 }
