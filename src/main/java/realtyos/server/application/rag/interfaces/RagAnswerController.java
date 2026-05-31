@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import realtyos.server.application.common.response.ApiResponse;
+import realtyos.server.application.common.web.auth.CurrentUser;
 import realtyos.server.application.rag.application.RagAnswerService;
 import realtyos.server.application.rag.interfaces.dto.RagAskRequest;
 import realtyos.server.application.rag.interfaces.dto.RagAnswerResponse;
@@ -24,8 +25,12 @@ public class RagAnswerController {
 
     @PostMapping("/ask")
     @Operation(summary = "RAG 답변 생성", description = "질문과 가까운 RAG 문서를 검색한 뒤, 검색된 문서를 근거로 AI 답변을 생성합니다.")
-    public ApiResponse<RagAnswerResponse> ask(@RequestBody @Valid RagAskRequest request) {
+    public ApiResponse<RagAnswerResponse> ask(
+            @CurrentUser(required = false) Long userId,
+            @RequestBody @Valid RagAskRequest request
+    ) {
         return ApiResponse.success(RagAnswerResponse.from(answerService.answer(
+                userId,
                 request.query(),
                 request.topK(),
                 request.embeddingProvider(),
