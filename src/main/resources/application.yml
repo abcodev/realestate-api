@@ -6,7 +6,7 @@ server:
 
 spring:
   application:
-    name: realestate-api
+    name: realtyos-api
   profiles:
     active: loc
   jpa:

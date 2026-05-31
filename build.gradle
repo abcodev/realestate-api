@@ -6,7 +6,7 @@ plugins {
 
 group = 'com.server.application'
 version = '0.0.1-SNAPSHOT'
-description = 'realestate-api'
+description = 'realty-api'
 
 java {
 	toolchain {
