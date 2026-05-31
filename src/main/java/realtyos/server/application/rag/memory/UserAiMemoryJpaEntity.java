@@ -76,6 +76,15 @@ public class UserAiMemoryJpaEntity extends BaseEntity {
         }
     }
 
+    public void updatePreference(String preferredRegion, Long minPrice, Long maxPrice) {
+        if (hasText(preferredRegion)) {
+            this.preferredRegion = preferredRegion;
+            this.recentRegion = preferredRegion;
+        }
+        this.minPrice = minPrice;
+        this.maxPrice = maxPrice;
+    }
+
     public UserAiMemory toDomain() {
         return new UserAiMemory(
                 userId,

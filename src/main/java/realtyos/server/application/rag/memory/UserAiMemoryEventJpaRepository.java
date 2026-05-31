@@ -8,4 +8,8 @@ import java.util.List;
 public interface UserAiMemoryEventJpaRepository extends JpaRepository<UserAiMemoryEventJpaEntity, Long> {
 
     List<UserAiMemoryEventJpaEntity> findByUserIdAndRegionIsNotNullOrderByCreatedAtDesc(Long userId, Pageable pageable);
+
+    List<UserAiMemoryEventJpaEntity> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
+
+    void deleteByUserId(Long userId);
 }

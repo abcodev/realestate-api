@@ -7,4 +7,6 @@ import java.util.Optional;
 public interface UserAiMemoryJpaRepository extends JpaRepository<UserAiMemoryJpaEntity, Long> {
 
     Optional<UserAiMemoryJpaEntity> findByUserId(Long userId);
+
+    void deleteByUserId(Long userId);
 }

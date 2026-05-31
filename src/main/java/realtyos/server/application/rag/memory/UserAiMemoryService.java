@@ -8,6 +8,7 @@ import realtyos.server.application.rag.domain.RagQueryRewritePolicy;
 import realtyos.server.application.rag.domain.RagSearchCondition;
 
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -52,6 +53,31 @@ public class UserAiMemoryService {
         repository.save(entity);
     }
 
+    @Transactional(readOnly = true)
+    public List<UserAiMemoryEventJpaEntity> findEvents(Long userId, Integer limit) {
+        if (userId == null) {
+            return List.of();
+        }
+        return eventRepository.findByUserIdOrderByCreatedAtDesc(
+                userId,
+                PageRequest.of(0, normalizeLimit(limit))
+        );
+    }
+
+    @Transactional
+    public UserAiMemory updatePreference(Long userId, String preferredRegion, Long minPrice, Long maxPrice) {
+        UserAiMemoryJpaEntity entity = repository.findByUserId(userId)
+                .orElseGet(() -> UserAiMemoryJpaEntity.create(userId));
+        entity.updatePreference(preferredRegion, minPrice, maxPrice);
+        return repository.save(entity).toDomain();
+    }
+
+    @Transactional
+    public void clear(Long userId) {
+        eventRepository.deleteByUserId(userId);
+        repository.deleteByUserId(userId);
+    }
+
     private Optional<String> findFrequentRegion(Long userId) {
         return eventRepository.findByUserIdAndRegionIsNotNullOrderByCreatedAtDesc(
                         userId,
@@ -68,5 +94,12 @@ public class UserAiMemoryService {
                         .comparingLong((Map.Entry<String, Long> entry) -> entry.getValue())
                         .thenComparing(Map.Entry::getKey))
                 .map(Map.Entry::getKey);
+    }
+
+    private int normalizeLimit(Integer limit) {
+        if (limit == null || limit <= 0) {
+            return 20;
+        }
+        return Math.min(limit, 100);
     }
 }
