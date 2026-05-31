@@ -24,6 +24,11 @@ spring:
         order_updates: true
       jdbc:
         time_zone: Asia/Seoul
+  flyway:
+    enabled: ${SPRING_FLYWAY_ENABLED:true}
+    locations: classpath:db/migration
+    baseline-on-migrate: ${SPRING_FLYWAY_BASELINE_ON_MIGRATE:true}
+    baseline-version: 0
 
 # Actuator — health 엔드포인트만 노출
 management:
@@ -40,6 +45,26 @@ management:
 # 번역 프로바이더 선택: GOOGLE (Google Cloud Translation) 또는 GEMINI (Gemini API, 저비용)
 translation:
   provider: ${TRANSLATION_PROVIDER:GEMINI}
+
+ai:
+  openai:
+    key: ${OPENAI_API_KEY:}
+    embedding-model: ${OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
+  ollama:
+    base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+    chat-model: ${OLLAMA_CHAT_MODEL:llama3.2}
+    embedding-model: ${OLLAMA_EMBEDDING_MODEL:nomic-embed-text}
+    embedding-batch-size: ${OLLAMA_EMBEDDING_BATCH_SIZE:10}
+
+rag:
+  sync:
+    enabled: ${RAG_SYNC_ENABLED:false}
+    cron: ${RAG_SYNC_CRON:0 30 4 * * ?}
+    zone: ${RAG_SYNC_ZONE:Asia/Seoul}
+    document-limit: ${RAG_SYNC_DOCUMENT_LIMIT:0}
+    embedding-limit: ${RAG_SYNC_EMBEDDING_LIMIT:1000}
+    embedding-provider: ${RAG_SYNC_EMBEDDING_PROVIDER:OLLAMA}
+    embedding-model: ${RAG_SYNC_EMBEDDING_MODEL:nomic-embed-text}
 
 
 # Firebase (Push Notification)
