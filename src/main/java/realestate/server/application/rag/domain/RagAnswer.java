@@ -1,8 +1,8 @@
-package realestate.server.application.rag.application;
+package realestate.server.application.rag.domain;
 
 import java.util.List;
 
-public record RagAnswerResponse(
+public record RagAnswer(
         String answer,
         List<RagAnswerSource> sources
 ) {

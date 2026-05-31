@@ -1,4 +1,4 @@
-package realestate.server.application.rag.application;
+package realestate.server.application.rag.client.openai;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -7,13 +7,14 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import realestate.server.application.common.ai.config.AiConfig;
+import realestate.server.application.rag.domain.EmbeddingClient;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -22,7 +23,7 @@ import java.util.List;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class OpenAiEmbeddingClient {
+public class OpenAiEmbeddingClient implements EmbeddingClient {
 
     private static final String EMBEDDINGS_URL = "https://api.openai.com/v1/embeddings";
     private static final String DEFAULT_EMBEDDING_MODEL = "text-embedding-3-small";
@@ -31,6 +32,7 @@ public class OpenAiEmbeddingClient {
     private final AiConfig aiConfig;
     private final ObjectMapper objectMapper;
 
+    @Override
     public List<List<Double>> embed(List<String> inputs) {
         if (inputs.isEmpty()) {
             return List.of();

@@ -1,4 +1,4 @@
-package realestate.server.application.rag.application;
+package realestate.server.application.rag.domain;
 
 public record RagDocumentBuildResult(
         int insertedCount

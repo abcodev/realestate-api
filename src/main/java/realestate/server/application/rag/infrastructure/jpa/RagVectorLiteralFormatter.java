@@ -1,4 +1,4 @@
-package realestate.server.application.rag.application;
+package realestate.server.application.rag.infrastructure.jpa;
 
 import java.util.List;
 import java.util.stream.Collectors;

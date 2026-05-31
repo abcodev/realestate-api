@@ -3,8 +3,12 @@ package realestate.server.application.rag.application;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import realestate.server.application.common.ai.AiProvider;
 import realestate.server.application.common.ai.AiService;
+import realestate.server.application.rag.domain.RagAnswer;
+import realestate.server.application.rag.domain.RagAnswerSource;
+import realestate.server.application.rag.domain.RagSearchResult;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -12,6 +16,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class RagAnswerService {
 
     private static final String ENTITY_TYPE = "RAG_REALESTATE";
@@ -19,10 +24,10 @@ public class RagAnswerService {
     private final RagSearchService searchService;
     private final AiService aiService;
 
-    public RagAnswerResponse answer(String query, Integer topK) {
+    public RagAnswer answer(String query, Integer topK) {
         List<RagSearchResult> searchResults = searchService.search(query, topK);
         if (searchResults.isEmpty()) {
-            return new RagAnswerResponse("관련 실거래가 문서를 찾지 못했습니다.", List.of());
+            return new RagAnswer("관련 실거래가 문서를 찾지 못했습니다.", List.of());
         }
 
         String prompt = buildPrompt(query, searchResults);
@@ -32,7 +37,7 @@ public class RagAnswerService {
                 .toList();
 
         log.info("RAG answer completed - query: {}, sourceCount: {}", query, sources.size());
-        return new RagAnswerResponse(answer, sources);
+        return new RagAnswer(answer, sources);
     }
 
     private String buildPrompt(String query, List<RagSearchResult> searchResults) {

@@ -1,4 +1,4 @@
-package realestate.server.application.rag.application;
+package realestate.server.application.rag.domain;
 
 public record RagAnswerSource(
         Long documentId,
@@ -10,7 +10,7 @@ public record RagAnswerSource(
         double distance,
         double similarity
 ) {
-    static RagAnswerSource from(RagSearchResult result) {
+    public static RagAnswerSource from(RagSearchResult result) {
         return new RagAnswerSource(
                 result.documentId(),
                 result.title(),
