@@ -3,11 +3,11 @@ import pandas as pd
 
 # 1. DB 연결 설정
 conn = psycopg2.connect(
-    host="localhost",
-    port=5432,
-    dbname="realestate",
-    user="dev",
-    password="dev1234"
+    host="127.0.0.1",
+    port=15432,
+    dbname="realtyos",
+    user="postgres",
+    password="postgres"
 )
 
 # 2. 올바른 SQL 구문 (컬럼 2개, 파라미터 2개 일치)
