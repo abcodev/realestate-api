@@ -46,6 +46,11 @@ management:
 translation:
   provider: ${TRANSLATION_PROVIDER:GEMINI}
 
+ai:
+  openai:
+    key: ${OPENAI_API_KEY:}
+    embedding-model: ${OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
+
 
 # Firebase (Push Notification)
 firebase:

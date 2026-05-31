@@ -22,6 +22,7 @@ public class AiConfig {
     @Setter
     public static class OpenAi {
         private String key;
+        private String embeddingModel = "text-embedding-3-small";
     }
 
     @Getter
