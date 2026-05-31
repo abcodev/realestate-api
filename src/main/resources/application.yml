@@ -55,6 +55,18 @@ ai:
     chat-model: ${OLLAMA_CHAT_MODEL:llama3.2}
     embedding-model: ${OLLAMA_EMBEDDING_MODEL:nomic-embed-text}
     embedding-batch-size: ${OLLAMA_EMBEDDING_BATCH_SIZE:10}
+  router:
+    enabled: ${AI_ROUTER_ENABLED:true}
+    local-first: ${AI_ROUTER_LOCAL_FIRST:true}
+    local-max-input-chars: ${AI_ROUTER_LOCAL_MAX_INPUT_CHARS:6000}
+    default-provider: ${AI_ROUTER_DEFAULT_PROVIDER:OPENAI}
+    default-model: ${AI_ROUTER_DEFAULT_MODEL:gpt-4o-mini}
+    local-provider: ${AI_ROUTER_LOCAL_PROVIDER:OLLAMA}
+    local-model: ${AI_ROUTER_LOCAL_MODEL:llama3.2}
+    high-quality-provider: ${AI_ROUTER_HIGH_QUALITY_PROVIDER:OPENAI}
+    high-quality-model: ${AI_ROUTER_HIGH_QUALITY_MODEL:gpt-4o-mini}
+    fallback-provider: ${AI_ROUTER_FALLBACK_PROVIDER:OPENAI}
+    fallback-model: ${AI_ROUTER_FALLBACK_MODEL:gpt-4o-mini}
 
 rag:
   sync:

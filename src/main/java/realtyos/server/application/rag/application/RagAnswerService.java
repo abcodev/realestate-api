@@ -39,7 +39,7 @@ public class RagAnswerService {
         }
 
         String prompt = buildPrompt(query, searchResults);
-        String answer = aiService.ask(resolveAnswerProvider(answerProvider), ENTITY_TYPE, prompt, answerModel);
+        String answer = aiService.askRouted(ENTITY_TYPE, prompt, resolveAnswerProvider(answerProvider), answerModel);
         List<RagAnswerSource> sources = searchResults.stream()
                 .map(RagAnswerSource::from)
                 .toList();
@@ -50,7 +50,7 @@ public class RagAnswerService {
 
     private AiProvider resolveAnswerProvider(String answerProvider) {
         if (answerProvider == null || answerProvider.isBlank()) {
-            return AiProvider.OPENAI;
+            return null;
         }
         return AiProvider.valueOf(answerProvider.trim().toUpperCase());
     }

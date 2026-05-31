@@ -2,7 +2,6 @@ package realtyos.server.application.realestate.infrastructure.jpa;
 
 import realtyos.server.application.realestate.domain.Deals;
 import realtyos.server.application.realestate.domain.DealsRepository;
-import realtyos.server.application.realestate.domain.RegionCode;
 import realtyos.server.application.realestate.infrastructure.jpa.entity.DealsJpaEntity;
 import realtyos.server.application.realestate.infrastructure.jpa.mapper.DealsMapper;
 import realtyos.server.application.realestate.infrastructure.jpa.repository.DealsJpaRepository;
@@ -10,9 +9,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Map;
@@ -128,22 +124,5 @@ public class DealsRepositoryJpaAdaptor implements DealsRepository {
         );
     }
 
-
-    @Override
-    public List<Deals> findByInterestRegion(RegionCode regionCode) {
-        Pageable page = PageRequest.of(0, 3);
-        return jpaRepository.findAllByRegionCode(regionCode, page)
-                .stream()
-                .map(mapper::mapToDomain)
-                .toList();
-    }
-
-//    @Override
-//    public List<Deals> findByRegion1depthName(String region1depthName) {
-//        return jpaRepository.findTop3ByRegion1depthNameOrderByDealYearDescDealMonthDescDealDayDesc(region1depthName)
-//                .stream()
-//                .map(mapper::mapToDomain)
-//                .toList();
-//    }
 
 }

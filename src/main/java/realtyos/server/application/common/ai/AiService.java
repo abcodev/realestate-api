@@ -2,6 +2,8 @@ package realtyos.server.application.common.ai;
 
 import realtyos.server.application.common.ai.prompt.AiPromptTemplateJpaEntity;
 import realtyos.server.application.common.ai.prompt.AiPromptTemplateRepository;
+import realtyos.server.application.common.ai.routing.AiModelRouter;
+import realtyos.server.application.common.ai.routing.AiRoute;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -30,11 +32,14 @@ public class AiService {
 
     private final Map<AiProvider, AiClient> clientMap;
     private final AiPromptTemplateRepository promptTemplateRepository;
+    private final AiModelRouter modelRouter;
 
-    public AiService(List<AiClient> clients, AiPromptTemplateRepository promptTemplateRepository) {
+    public AiService(List<AiClient> clients, AiPromptTemplateRepository promptTemplateRepository,
+                     AiModelRouter modelRouter) {
         this.clientMap = clients.stream()
                 .collect(Collectors.toMap(AiClient::getProvider, Function.identity()));
         this.promptTemplateRepository = promptTemplateRepository;
+        this.modelRouter = modelRouter;
     }
 
     /**
@@ -56,6 +61,21 @@ public class AiService {
                         String.format("활성 프롬프트가 없습니다: entityType=%s, provider=%s", entityType, provider)));
 
         return executeChat(provider, template, userMessage, model);
+    }
+
+    public String askRouted(String entityType, String userMessage, AiProvider requestedProvider, String requestedModel) {
+        AiRoute route = modelRouter.route(entityType, userMessage, requestedProvider, requestedModel);
+        try {
+            return ask(route.provider(), entityType, userMessage, route.model());
+        } catch (RuntimeException primaryFailure) {
+            if (route.fallbackProvider() == null || route.fallbackProvider() == route.provider()) {
+                throw primaryFailure;
+            }
+            log.warn("AI primary route failed - entityType: {}, provider: {}, model: {}, fallbackProvider: {}, fallbackModel: {}, reason: {}",
+                    entityType, route.provider(), route.model(), route.fallbackProvider(), route.fallbackModel(),
+                    route.reason(), primaryFailure);
+            return ask(route.fallbackProvider(), entityType, userMessage, route.fallbackModel());
+        }
     }
 
     /**
