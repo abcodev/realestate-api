@@ -38,7 +38,7 @@ public class AiConfig {
     @Setter
     public static class Ollama {
         private String baseUrl = "http://localhost:11434";
-        private String chatModel = "llama3.2";
+        private String chatModel = "qwen3:8b";
         private String embeddingModel = "nomic-embed-text";
         private int embeddingBatchSize = 10;
     }
@@ -52,7 +52,7 @@ public class AiConfig {
         private AiProvider defaultProvider = AiProvider.OPENAI;
         private String defaultModel = "gpt-4o-mini";
         private AiProvider localProvider = AiProvider.OLLAMA;
-        private String localModel = "llama3.2";
+        private String localModel = "qwen3:8b";
         private AiProvider highQualityProvider = AiProvider.OPENAI;
         private String highQualityModel = "gpt-4o-mini";
         private AiProvider fallbackProvider = AiProvider.OPENAI;

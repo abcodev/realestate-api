@@ -16,7 +16,7 @@ class AiModelRouterTest {
         AiRoute route = router.route("RAG_REALESTATE", "강남 최근 거래 알려줘", null, null);
 
         assertThat(route.provider()).isEqualTo(AiProvider.OLLAMA);
-        assertThat(route.model()).isEqualTo("llama3.2");
+        assertThat(route.model()).isEqualTo("qwen3:8b");
         assertThat(route.fallbackProvider()).isEqualTo(AiProvider.OPENAI);
         assertThat(route.reason()).isEqualTo("rag-local-first");
     }
