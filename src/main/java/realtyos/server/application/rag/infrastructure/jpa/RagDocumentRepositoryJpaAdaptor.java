@@ -19,6 +19,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 
 @Repository
@@ -26,6 +27,27 @@ import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 public class RagDocumentRepositoryJpaAdaptor implements RagDocumentRepository {
 
     private static final String DEAL_SOURCE_TYPE = "DEAL";
+    private static final Map<String, String> REGION_CODE_ALIASES = Map.ofEntries(
+            Map.entry("강남구", "11680"),
+            Map.entry("강남", "11680"),
+            Map.entry("서초구", "11650"),
+            Map.entry("서초", "11650"),
+            Map.entry("송파구", "11710"),
+            Map.entry("송파", "11710"),
+            Map.entry("마포구", "11440"),
+            Map.entry("마포", "11440"),
+            Map.entry("용산구", "11170"),
+            Map.entry("용산", "11170"),
+            Map.entry("성동구", "11200"),
+            Map.entry("성동", "11200"),
+            Map.entry("영등포구", "11560"),
+            Map.entry("영등포", "11560"),
+            Map.entry("양천구", "11470"),
+            Map.entry("목동", "11470"),
+            Map.entry("분당구", "41135"),
+            Map.entry("분당", "41135"),
+            Map.entry("판교", "41135")
+    );
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -54,7 +76,7 @@ public class RagDocumentRepositoryJpaAdaptor implements RagDocumentRepository {
                         concat_ws(E'\\n',
                             '문서유형: 아파트 실거래가',
                             '검색키워드: 실거래가 아파트 매매 거래금액 거래일 전용면적 층 법정동 도로명',
-                            concat('지역키워드: ', concat_ws(' ', nullif(d.sgg_code, ''), nullif(d.umd_name, ''), nullif(d.estate_agent_sgg_name, ''))),
+                            concat('지역키워드: ', concat_ws(' ', nullif(d.sgg_code, ''), nullif(d.umd_name, ''))),
                             concat('아파트키워드: ', coalesce(nullif(d.apt_name, ''), '정보없음'), ' ', coalesce(nullif(d.apt_seq, ''), '')),
                             concat('거래년월: ', coalesce(d.deal_year::text, '연도미상'), '-', lpad(coalesce(d.deal_month::text, '0'), 2, '0')),
                             concat('거래일: ', coalesce(d.deal_year::text, '연도미상'), '-', lpad(coalesce(d.deal_month::text, '0'), 2, '0'), '-', lpad(coalesce(d.deal_day::text, '0'), 2, '0')),
@@ -447,11 +469,7 @@ public class RagDocumentRepositoryJpaAdaptor implements RagDocumentRepository {
             return;
         }
         if (hasText(condition.region())) {
-            sql.append(" AND (rd.region ILIKE ? OR d.umd_name ILIKE ? OR d.estate_agent_sgg_name ILIKE ?) ");
-            String value = like(condition.region());
-            args.add(value);
-            args.add(value);
-            args.add(value);
+            appendActualRegionFilter(sql, args, condition.region(), true);
         }
         if (hasText(condition.apartmentName())) {
             sql.append(" AND (rd.apartment_name ILIKE ? OR d.apt_name ILIKE ?) ");
@@ -494,12 +512,7 @@ public class RagDocumentRepositoryJpaAdaptor implements RagDocumentRepository {
             return;
         }
         if (hasText(condition.region())) {
-            sql.append(" AND (d.umd_name ILIKE ? OR d.estate_agent_sgg_name ILIKE ? OR d.apt_name ILIKE ? OR d.sgg_code ILIKE ?) ");
-            String value = like(condition.region());
-            args.add(value);
-            args.add(value);
-            args.add(value);
-            args.add(value);
+            appendActualRegionFilter(sql, args, condition.region(), false);
         }
         if (hasText(condition.apartmentName())) {
             sql.append(" AND d.apt_name ILIKE ? ");
@@ -541,6 +554,30 @@ public class RagDocumentRepositoryJpaAdaptor implements RagDocumentRepository {
 
     private String like(String value) {
         return "%" + value.trim() + "%";
+    }
+
+    private void appendActualRegionFilter(StringBuilder sql, List<Object> args, String region, boolean includeDocumentRegion) {
+        String normalizedRegion = region.trim();
+        String regionCode = REGION_CODE_ALIASES.get(normalizedRegion);
+        if (regionCode != null) {
+            sql.append(" AND d.sgg_code = ? ");
+            args.add(regionCode);
+            return;
+        }
+
+        if (includeDocumentRegion) {
+            sql.append(" AND (rd.region ILIKE ? OR d.umd_name ILIKE ? OR d.sgg_code ILIKE ?) ");
+            String value = like(normalizedRegion);
+            args.add(value);
+            args.add(value);
+            args.add(value);
+            return;
+        }
+
+        sql.append(" AND (d.umd_name ILIKE ? OR d.sgg_code ILIKE ?) ");
+        String value = like(normalizedRegion);
+        args.add(value);
+        args.add(value);
     }
 
     private LocalDate toStartDate(Integer year, Integer month) {

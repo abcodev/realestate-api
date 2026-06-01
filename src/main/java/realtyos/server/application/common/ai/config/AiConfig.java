@@ -26,6 +26,9 @@ public class AiConfig {
     public static class OpenAi {
         private String key;
         private String embeddingModel = "text-embedding-3-small";
+        private boolean embeddingEnabled = true;
+        private int embeddingBatchSize = 50;
+        private int embeddingMaxInputChars = 1200;
     }
 
     @Getter

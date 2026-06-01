@@ -1,6 +1,7 @@
 package realtyos.server.application.rag.application;
 
 import org.junit.jupiter.api.Test;
+import realtyos.server.application.common.ai.config.AiConfig;
 import realtyos.server.application.rag.domain.EmbeddingClient;
 import realtyos.server.application.rag.domain.EmbeddingModelProfile;
 import realtyos.server.application.rag.domain.EmbeddingProvider;
@@ -16,7 +17,7 @@ class EmbeddingClientRegistryTest {
         EmbeddingClientRegistry registry = new EmbeddingClientRegistry(List.of(
                 new StubEmbeddingClient(EmbeddingProvider.OPENAI, "text-embedding-3-small"),
                 new StubEmbeddingClient(EmbeddingProvider.OLLAMA, "nomic-embed-text")
-        ));
+        ), new AiConfig());
 
         EmbeddingModelProfile profile = registry.resolveProfile(null, null);
 

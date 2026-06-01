@@ -77,6 +77,9 @@ ai:
   openai:
     key: ${OPENAI_API_KEY:}
     embedding-model: ${OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
+    embedding-enabled: ${OPENAI_EMBEDDING_ENABLED:true}
+    embedding-batch-size: ${OPENAI_EMBEDDING_BATCH_SIZE:50}
+    embedding-max-input-chars: ${OPENAI_EMBEDDING_MAX_INPUT_CHARS:1200}
   ollama:
     base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
     chat-model: ${OLLAMA_CHAT_MODEL:qwen3:8b}

@@ -3,6 +3,7 @@ package realtyos.server.application.rag.application;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
+import realtyos.server.application.common.ai.config.AiConfig;
 import realtyos.server.application.rag.domain.EmbeddingClient;
 import realtyos.server.application.rag.domain.EmbeddingModelProfile;
 import realtyos.server.application.rag.domain.EmbeddingProvider;
@@ -16,6 +17,7 @@ public class EmbeddingClientRegistry {
     private static final EmbeddingProvider DEFAULT_PROVIDER = EmbeddingProvider.OLLAMA;
 
     private final List<EmbeddingClient> clients;
+    private final AiConfig aiConfig;
 
     public EmbeddingClient resolve(EmbeddingProvider provider) {
         return clients.stream()
@@ -35,6 +37,10 @@ public class EmbeddingClientRegistry {
         if (!StringUtils.hasText(provider)) {
             return DEFAULT_PROVIDER;
         }
-        return EmbeddingProvider.valueOf(provider.trim().toUpperCase());
+        EmbeddingProvider resolvedProvider = EmbeddingProvider.valueOf(provider.trim().toUpperCase());
+        if (resolvedProvider == EmbeddingProvider.OPENAI && !aiConfig.getOpenai().isEmbeddingEnabled()) {
+            throw new IllegalArgumentException("OpenAI embedding 호출이 현재 설정에서 비활성화되어 있습니다. provider=OLLAMA를 사용하거나 ai.openai.embedding-enabled=true로 변경하세요.");
+        }
+        return resolvedProvider;
     }
 }
