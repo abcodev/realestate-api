@@ -104,9 +104,4 @@ public record User(
         );
     }
 
-    @Override
-    public String nickname() {
-        return nickname;
-    }
-
 }

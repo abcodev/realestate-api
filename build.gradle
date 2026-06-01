@@ -36,6 +36,8 @@ dependencies {
 
 	// Spring MVC
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 
 	// Actuator (헬스체크)
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'

@@ -9,6 +9,31 @@ spring:
     name: realtyos-api
   profiles:
     active: loc
+  security:
+    oauth2:
+      client:
+        registration:
+          kakao:
+            client-id: ${KAKAO_CLIENT_ID:}
+            client-secret: ${KAKAO_CLIENT_SECRET:}
+            redirect-uri: "{baseUrl}/login/oauth2/code/kakao"
+            authorization-grant-type: authorization_code
+            client-authentication-method: client_secret_post
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:}
+            client-secret: ${GOOGLE_CLIENT_SECRET:}
+            redirect-uri: "{baseUrl}/login/oauth2/code/google"
+            authorization-grant-type: authorization_code
+            scope:
+              - openid
+              - profile
+        provider:
+          kakao:
+            authorization-uri: https://kauth.kakao.com/oauth/authorize
+            token-uri: https://kauth.kakao.com/oauth/token
+            user-info-uri: https://kapi.kakao.com/v2/user/me
+            user-name-attribute: id
+
   jpa:
     hibernate:
       ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
@@ -40,6 +65,8 @@ management:
     health:
       show-details: never
 
+auth:
+  frontend-redirect-url: ${AUTH_FRONTEND_REDIRECT_URL:http://localhost:5173/oauth2/callback}
 
 
 # 번역 프로바이더 선택: GOOGLE (Google Cloud Translation) 또는 GEMINI (Gemini API, 저비용)

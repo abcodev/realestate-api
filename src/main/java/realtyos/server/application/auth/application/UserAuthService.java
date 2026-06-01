@@ -62,12 +62,26 @@ public class UserAuthService {
         OAuthUserInfo userInfo =
                 resolveOAuthUser(oauth2Provider, request.accessToken(), request.idToken(), request.authorizationCode(), request.redirectUri());
 
-        User user = userRepository
-                .findByProviderAndProviderIdOrEmail(oauth2Provider, userInfo.providerId(), userInfo.email())
-                .orElseGet(() -> registerNewUser(userInfo, oauth2Provider, request.pushEnabled(), request.nickname()));
+        return Optional.of(loginWithOAuthUser(userInfo, oauth2Provider, clientIp, request.pushEnabled(), request.nickname()));
+    }
 
-        if (StringUtils.hasText(request.pushEnabled())) {
-            user = user.enablePush("Y".equalsIgnoreCase(request.pushEnabled()));
+    public LoginResponse loginWithOAuthUser(OAuthUserInfo userInfo, Oauth2Provider oauth2Provider, String clientIp) {
+        return loginWithOAuthUser(userInfo, oauth2Provider, clientIp, null, null);
+    }
+
+    private LoginResponse loginWithOAuthUser(
+            OAuthUserInfo userInfo,
+            Oauth2Provider oauth2Provider,
+            String clientIp,
+            String pushEnabled,
+            String requestNickname
+    ) {
+        User user = userRepository
+                .findByProviderAndProviderId(oauth2Provider, userInfo.providerId())
+                .orElseGet(() -> registerNewUser(userInfo, oauth2Provider, pushEnabled, requestNickname));
+
+        if (StringUtils.hasText(pushEnabled)) {
+            user = user.enablePush("Y".equalsIgnoreCase(pushEnabled));
             user = userRepository.save(user);
         }
 
@@ -76,14 +90,13 @@ public class UserAuthService {
         refreshTokenStore.save(user.id(), authToken.refreshToken(), REFRESH_TOKEN_TTL_SECONDS);
         recordLoginHistory(user.id(), clientIp);
 
-        return Optional.of(new LoginResponse(
+        return new LoginResponse(
                 user.id(),
                 authToken.accessToken(),
                 authToken.refreshToken(),
                 user.nickname(),
                 user.bio(),
                 userTypeName
-                )
         );
     }
 
@@ -99,7 +112,7 @@ public class UserAuthService {
         OAuthUserInfo userInfo =
                 resolveOAuthUser(oauth2Provider, request.accessToken(), request.idToken(), request.authorizationCode(), null);
 
-        String nickname = resolveNickname(userInfo, oauth2Provider, request.nickname());
+        String nickname = resolveNickname(userInfo, request.nickname());
         String bio = Optional.ofNullable(request.bio()).orElse("");
 
         User user = loginOrRegister(userInfo, nickname, bio, oauth2Provider, request.pushEnabled());
@@ -163,7 +176,7 @@ public class UserAuthService {
 
     public User loginOrRegister(OAuthUserInfo user, String nickname, String bio, Oauth2Provider oauth2Provider, String pushEnabled) {
         return userRepository
-                .findByProviderAndProviderIdOrEmail(oauth2Provider, user.providerId(), user.email())
+                .findByProviderAndProviderId(oauth2Provider, user.providerId())
                 .map(existingUser -> {
                     if (StringUtils.hasText(pushEnabled)) {
                         User updatedUser = existingUser.enablePush("Y".equalsIgnoreCase(pushEnabled));
@@ -183,10 +196,9 @@ public class UserAuthService {
     }
 
     private User registerNewUser(OAuthUserInfo userInfo, Oauth2Provider oauth2Provider, String pushEnabled, String requestNickname) {
-        log.info("신규회원 등록 {} user: {} providerId: {}", oauth2Provider.name(), userInfo.email(), userInfo.providerId());
+        log.info("신규회원 등록 {} providerId: {}", oauth2Provider.name(), userInfo.providerId());
 
-        String nickname = resolveNickname(userInfo, oauth2Provider, requestNickname);
-
+        String nickname = resolveNickname(userInfo, requestNickname);
         boolean isPushEnabled = StringUtils.hasText(pushEnabled) && "Y".equalsIgnoreCase(pushEnabled);
 
         User newUser = User.builder()
@@ -210,14 +222,11 @@ public class UserAuthService {
         return savedUser;
     }
 
-    private String resolveNickname(OAuthUserInfo userInfo, Oauth2Provider oauth2Provider, String requestNickname) {
+    private String resolveNickname(OAuthUserInfo userInfo, String requestNickname) {
         if (StringUtils.hasText(requestNickname)) {
             return requestNickname;
         }
-        if (StringUtils.hasText(userInfo.name())) {
-            return userInfo.name();
-        }
-        return oauth2Provider.name() + "_user";
+        return userInfo.name();
     }
 
     @Transactional
