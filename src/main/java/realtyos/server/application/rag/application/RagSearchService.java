@@ -50,6 +50,11 @@ public class RagSearchService {
                 normalizedTopK,
                 rewriteResult.condition()
         );
+        if (results.isEmpty()) {
+            results = ragDocumentRepository.searchDealsByKeyword(normalizedTopK, rewriteResult.condition());
+            log.info("RAG embedding search returned empty. keyword fallback completed - query: {}, condition: {}, resultCount: {}",
+                    query, rewriteResult.condition(), results.size());
+        }
 
         log.info("RAG search completed - provider: {}, model: {}, query: {}, rewrittenQuery: {}, topK: {}, condition: {}, resultCount: {}",
                 profile.provider(), profile.model(), query, rewriteResult.rewrittenQuery(),

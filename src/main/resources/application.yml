@@ -52,7 +52,7 @@ ai:
     embedding-model: ${OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
   ollama:
     base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
-    chat-model: ${OLLAMA_CHAT_MODEL:=qwen3:8b}
+    chat-model: ${OLLAMA_CHAT_MODEL:qwen3:8b}
     embedding-model: ${OLLAMA_EMBEDDING_MODEL:nomic-embed-text}
     embedding-batch-size: ${OLLAMA_EMBEDDING_BATCH_SIZE:10}
   router:
@@ -62,7 +62,7 @@ ai:
     default-provider: ${AI_ROUTER_DEFAULT_PROVIDER:OPENAI}
     default-model: ${AI_ROUTER_DEFAULT_MODEL:gpt-4o-mini}
     local-provider: ${AI_ROUTER_LOCAL_PROVIDER:OLLAMA}
-    local-model: ${AI_ROUTER_LOCAL_MODEL:=qwen3:8b}
+    local-model: ${AI_ROUTER_LOCAL_MODEL:qwen3:8b}
     high-quality-provider: ${AI_ROUTER_HIGH_QUALITY_PROVIDER:OPENAI}
     high-quality-model: ${AI_ROUTER_HIGH_QUALITY_MODEL:gpt-4o-mini}
     fallback-provider: ${AI_ROUTER_FALLBACK_PROVIDER:OPENAI}
@@ -70,7 +70,7 @@ ai:
 
 rag:
   sync:
-    enabled: ${RAG_SYNC_ENABLED:false}
+    enabled: ${RAG_SYNC_ENABLED:true}
     cron: ${RAG_SYNC_CRON:0 30 4 * * ?}
     zone: ${RAG_SYNC_ZONE:Asia/Seoul}
     document-limit: ${RAG_SYNC_DOCUMENT_LIMIT:0}

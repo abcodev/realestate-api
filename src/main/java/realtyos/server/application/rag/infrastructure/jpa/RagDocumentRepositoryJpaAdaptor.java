@@ -307,6 +307,102 @@ public class RagDocumentRepositoryJpaAdaptor implements RagDocumentRepository {
     }
 
     @Override
+    public List<RagSearchResult> searchDealsByKeyword(int topK, RagSearchCondition condition) {
+        List<Object> args = new ArrayList<>();
+        StringBuilder sql = new StringBuilder("""
+                WITH matched AS (
+                    SELECT
+                        d.id AS source_id,
+                        concat_ws(' ',
+                            coalesce(nullif(d.apt_name, ''), '아파트명 미상'),
+                            coalesce(nullif(d.umd_name, ''), ''),
+                            '아파트 실거래',
+                            concat(
+                                coalesce(d.deal_year::text, '연도미상'), '년 ',
+                                coalesce(d.deal_month::text, '월미상'), '월 ',
+                                coalesce(d.deal_day::text, '일미상'), '일'
+                            )
+                        ) AS title,
+                        concat_ws(E'\\n',
+                            '문서유형: 아파트 실거래가',
+                            '검색방식: keyword fallback',
+                            concat('아파트명: ', coalesce(nullif(d.apt_name, ''), '정보없음')),
+                            concat('법정동: ', coalesce(nullif(d.umd_name, ''), '정보없음')),
+                            concat('지역코드: ', coalesce(nullif(d.sgg_code, ''), '정보없음')),
+                            concat('거래일: ', coalesce(d.deal_year::text, '연도미상'), '-', lpad(coalesce(d.deal_month::text, '0'), 2, '0'), '-', lpad(coalesce(d.deal_day::text, '0'), 2, '0')),
+                            concat('전용면적: ', coalesce(nullif(d.exclu_use_area, ''), '정보없음'), '㎡'),
+                            concat('거래금액: ', coalesce(nullif(d.deal_amount, ''), '정보없음'), '만원'),
+                            concat('층: ', coalesce(nullif(d.floor, ''), '정보없음')),
+                            concat('건축년도: ', coalesce(nullif(d.build_year, ''), '정보없음')),
+                            concat('거래유형: ', coalesce(nullif(d.dealing_type, ''), '정보없음')),
+                            concat('중개사소재지: ', coalesce(nullif(d.estate_agent_sgg_name, ''), '정보없음')),
+                            concat('실거래 원본 ID: ', d.id::text)
+                        ) AS content,
+                        nullif(d.apt_name, '') AS apartment_name,
+                        concat_ws(' ', nullif(d.sgg_code, ''), nullif(d.umd_name, '')) AS region,
+                        make_date(d.deal_year, d.deal_month, d.deal_day) AS deal_date,
+                        d.exclu_use_area,
+                        NULLIF(regexp_replace(d.deal_amount, '[^0-9]', '', 'g'), '')::bigint AS deal_amount,
+                        d.floor,
+                        d.build_year,
+                        CASE
+                            WHEN d.deal_year IS NULL OR d.deal_month IS NULL OR d.deal_day IS NULL THEN 0.0
+                            ELSE GREATEST(0.0, 1.0 - (CURRENT_DATE - make_date(d.deal_year, d.deal_month, d.deal_day))::double precision / 365.0)
+                        END AS recency_score
+                    FROM real_estate_deals d
+                    WHERE d.id IS NOT NULL
+                """);
+
+        appendDealFilters(sql, args, condition);
+
+        boolean recentFirst = condition != null && Boolean.TRUE.equals(condition.recentFirst());
+        sql.append("""
+                )
+                SELECT
+                    source_id,
+                    title,
+                    content,
+                    apartment_name,
+                    region,
+                    deal_date,
+                    exclu_use_area,
+                    deal_amount,
+                    floor,
+                    build_year,
+                    recency_score,
+                    CASE WHEN ? THEN 0.70 + recency_score * 0.30 ELSE 0.70 END AS final_score
+                FROM matched
+                ORDER BY final_score DESC, deal_date DESC NULLS LAST
+                LIMIT ?
+                """);
+        args.add(recentFirst);
+        args.add(topK);
+
+        return jdbcTemplate.query(sql.toString(),
+                (rs, rowNum) -> new RagSearchResult(
+                        null,
+                        "KEYWORD",
+                        "real_estate_deals",
+                        rs.getString("title"),
+                        rs.getString("content"),
+                        rs.getString("apartment_name"),
+                        rs.getString("region"),
+                        DEAL_SOURCE_TYPE,
+                        rs.getLong("source_id"),
+                        rs.getString("deal_date"),
+                        rs.getString("exclu_use_area"),
+                        getNullableLong(rs, "deal_amount"),
+                        rs.getString("floor"),
+                        rs.getString("build_year"),
+                        0.30,
+                        0.70,
+                        rs.getDouble("recency_score"),
+                        rs.getDouble("final_score")
+                ),
+                args.toArray());
+    }
+
+    @Override
     public RagIndexStats getIndexStats(EmbeddingModelProfile profile) {
         Long documentCount = jdbcTemplate.queryForObject("SELECT count(*) FROM rag_document", Long.class);
         Long changedDocumentCount = jdbcTemplate.queryForObject("""
@@ -362,6 +458,52 @@ public class RagDocumentRepositoryJpaAdaptor implements RagDocumentRepository {
             String value = like(condition.apartmentName());
             args.add(value);
             args.add(value);
+        }
+
+        LocalDate fromDate = toStartDate(condition.fromYear(), condition.fromMonth());
+        if (fromDate != null) {
+            sql.append(" AND make_date(d.deal_year, d.deal_month, d.deal_day) >= ? ");
+            args.add(Date.valueOf(fromDate));
+        }
+
+        LocalDate toDate = toEndDate(condition.toYear(), condition.toMonth());
+        if (toDate != null) {
+            sql.append(" AND make_date(d.deal_year, d.deal_month, d.deal_day) <= ? ");
+            args.add(Date.valueOf(toDate));
+        }
+        if (condition.minPrice() != null) {
+            sql.append(" AND NULLIF(regexp_replace(d.deal_amount, '[^0-9]', '', 'g'), '')::bigint >= ? ");
+            args.add(condition.minPrice());
+        }
+        if (condition.maxPrice() != null) {
+            sql.append(" AND NULLIF(regexp_replace(d.deal_amount, '[^0-9]', '', 'g'), '')::bigint <= ? ");
+            args.add(condition.maxPrice());
+        }
+        if (condition.minArea() != null) {
+            sql.append(" AND NULLIF(d.exclu_use_area, '')::double precision >= ? ");
+            args.add(condition.minArea());
+        }
+        if (condition.maxArea() != null) {
+            sql.append(" AND NULLIF(d.exclu_use_area, '')::double precision <= ? ");
+            args.add(condition.maxArea());
+        }
+    }
+
+    private void appendDealFilters(StringBuilder sql, List<Object> args, RagSearchCondition condition) {
+        if (condition == null) {
+            return;
+        }
+        if (hasText(condition.region())) {
+            sql.append(" AND (d.umd_name ILIKE ? OR d.estate_agent_sgg_name ILIKE ? OR d.apt_name ILIKE ? OR d.sgg_code ILIKE ?) ");
+            String value = like(condition.region());
+            args.add(value);
+            args.add(value);
+            args.add(value);
+            args.add(value);
+        }
+        if (hasText(condition.apartmentName())) {
+            sql.append(" AND d.apt_name ILIKE ? ");
+            args.add(like(condition.apartmentName()));
         }
 
         LocalDate fromDate = toStartDate(condition.fromYear(), condition.fromMonth());

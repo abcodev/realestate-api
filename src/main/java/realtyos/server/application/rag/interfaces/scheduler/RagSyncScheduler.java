@@ -36,14 +36,30 @@ public class RagSyncScheduler {
         }
 
         try {
-            syncService.syncDealDocumentsAndEmbeddings(
-                    documentLimit,
-                    embeddingLimit,
-                    embeddingProvider,
-                    embeddingModel
-            );
+            syncConfigured();
         } catch (Exception e) {
             log.error("RAG 실거래가 문서/임베딩 동기화 실패", e);
         }
+    }
+
+    public void syncAfterDealsBatch() {
+        if (!enabled) {
+            return;
+        }
+
+        try {
+            syncConfigured();
+        } catch (Exception e) {
+            log.error("실거래 데이터 수집 후 RAG 문서/임베딩 동기화 실패", e);
+        }
+    }
+
+    private void syncConfigured() {
+        syncService.syncDealDocumentsAndEmbeddings(
+                documentLimit,
+                embeddingLimit,
+                embeddingProvider,
+                embeddingModel
+        );
     }
 }

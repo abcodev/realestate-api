@@ -13,7 +13,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class EmbeddingClientRegistry {
 
-    private static final EmbeddingProvider DEFAULT_PROVIDER = EmbeddingProvider.OPENAI;
+    private static final EmbeddingProvider DEFAULT_PROVIDER = EmbeddingProvider.OLLAMA;
 
     private final List<EmbeddingClient> clients;
 
