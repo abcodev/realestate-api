@@ -24,6 +24,7 @@ public class RagAnswerStreamingService {
     private final RagAiGateway aiGateway;
     private final UserAiMemoryService memoryService;
     private final RagAnswerPromptBuilder promptBuilder;
+    private final RagAnswerGuardrail guardrail;
 
     public void stream(Long userId, String query, Integer topK, String embeddingProvider, String embeddingModel,
                        String answerProvider, String answerModel, RagSearchCondition condition,
@@ -46,9 +47,9 @@ public class RagAnswerStreamingService {
         );
         send(eventConsumer, "retrieval_completed", Map.of("sourceCount", searchResults.size()));
 
-        if (searchResults.isEmpty()) {
+        if (!guardrail.hasUsableEvidence(personalizedCondition, searchResults)) {
             memoryService.record(userId, query, personalizedCondition);
-            send(eventConsumer, "token", Map.of("text", "관련 실거래가 문서를 찾지 못했습니다."));
+            send(eventConsumer, "token", Map.of("text", guardrail.noMatchingEvidenceMessage()));
             send(eventConsumer, "completed", Map.of("sourceCount", 0));
             return;
         }

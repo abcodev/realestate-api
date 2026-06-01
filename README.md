@@ -1,428 +1,192 @@
-# RealtyOS
-## Real-estate AI Decision Support Platform
-RAG · Agent · Long-term Memory · Model Routing 기반 AI Runtime Platform
+# RealtyOS API
+
+RAG와 LLM을 활용한 부동산 실거래 데이터 검색·분석 API.
+
+RealtyOS는 국토교통부 실거래 데이터를 수집하고, 이를 검색 가능한 RAG 문서와 임베딩으로 변환한 뒤 OpenAI 또는 Ollama 기반 LLM으로 답변을 생성하는 AI 부동산 분석 플랫폼입니다.
 
 ---
 
-# 1. 프로젝트 개요
+## 핵심 기능
 
-## 한 줄 소개
-부동산 실거래가 및 지역 데이터를 기반으로  
-RAG · Agent · Long-term Memory · Model Routing 구조를 활용한  
-AI-native Decision Support Platform 프로젝트.
-
-단순 AI 챗봇이 아닌, 다양한 AI 기능을 공통 Runtime 구조로 추상화하여  
-운영 가능한 AI Platform을 설계하는 것을 목표로 한다.
-
----
-
-# 2. 프로젝트 목표
-
-## 기술 목표
-- Java/Spring 기반 AI Runtime 구축
-- RAG 기반 Personalized Retrieval Pipeline 구축
-- Multi-Agent Runtime 설계
-- Long-term Memory 시스템 구현
-- Multi-model Routing 구조 설계
-- SaaS + Self-hosted LLM Hybrid Serving 구축
-- Prompt Runtime 및 Prompt Versioning 구축
-- AI Evaluation Platform 구축
-- Kafka 기반 Event-driven AI Runtime 구축
-- SSE 기반 Streaming 응답 구현
-- AI Observability 시스템 구축
-
-## 서비스 목표
-사용자의:
-- 관심 지역
-- 투자 성향
-- 실거주 여부
-- 예산 범위
-- 반복 조회 패턴
-
-등을 장기적으로 기억하고  
-개인화된 부동산 분석 및 의사결정 경험을 제공하는 AI-native Platform 구현
+- 아파트 실거래 데이터 수집 및 저장
+- 실거래 데이터 기반 RAG 문서 생성
+- OpenAI / Ollama 임베딩 생성 및 벡터 검색
+- 자연어 질문에서 지역, 가격, 면적, 기간 조건 추론
+- RAG 근거 문서 기반 LLM 답변 생성
+- SSE 기반 스트리밍 답변
+- 사용자 AI 메모리 기반 개인화 검색
+- Kakao / Google OAuth2 로그인
+- JWT 기반 인증
+- 실거래 수집 후 RAG 문서와 임베딩 자동 동기화
 
 ---
 
-# 3. 핵심 문제 정의
-
-기존 부동산 서비스의 문제:
-
-- 단순 데이터 조회 중심
-- 사용자 맥락 반영 부족
-- 지역 분석 정보 분산
-- 투자 성향 기반 추천 부족
-- 복잡한 데이터 해석 어려움
-- AI 응답 품질 운영 체계 부족
-
-특히 다음 데이터는 복합적으로 결합되어야 함:
-- 실거래가
-- 입주 물량
-- 정책 변화
-- 뉴스 데이터
-- 사용자 관심 데이터
-
-→ 단일 LLM 구조로는 한계 존재
-
----
-
-# 4. 해결 접근 방식
-
-## AI Runtime Platform 구조 설계
-
-AI 기능을 다음 단위로 분리:
-
-- Retrieval
-- Memory
-- Agent
-- Prompt Runtime
-- Evaluation
-- Model Routing
-
-→ 운영 가능한 AI Platform 구조로 설계
-
----
-
-# 5. 핵심 기능
-
----
-
-## 5-1. RAG 기반 Personalized Retrieval
-
-### Retrieval 데이터
-- 국토부 실거래가 데이터
-- 지역 거래량 데이터
-- 입주 예정 물량 데이터
-- 정책 뉴스 데이터
-- 교통 데이터
-- 학군 데이터
-- 사용자 관심 데이터
-- 과거 조회 이력
-
-### Retrieval Flow
-
-User Input
-→ Query Rewrite
-→ Hybrid Retrieval
-├ Dense Retrieval
-└ BM25 Retrieval
-→ Metadata Filtering
-→ Reranking
-→ Context Compression
-→ Context Assembly
-→ LLM Generation
-
-
-### Hybrid Retrieval 전략
-
-**Dense Retrieval**
-- Embedding 기반 semantic search
-
-**BM25 Retrieval**
-- 지역명 / 아파트명 / 정책 키워드 기반 정확 검색
-
-### Metadata Filtering
-- region
-- price_range
-- transaction_type
-- construction_year
-- apartment_type
-- supply_volume
-
-### Reranking
-- relevance 기반 재정렬
-
-### Personalized Retrieval
-User Long-term Memory 기반 반영:
-- 관심 지역
-- 가격대
-- 투자 성향
-- 실거주 여부
-
----
-
-## 5-2. Multi-Agent Runtime
-
-### Agent 구성
-
-**Retrieval Agent**
-- 실거래가 데이터
-- 뉴스/정책
-- 지역 통계
-
-**Analysis Agent**
-- 가격 흐름 분석
-- 거래량 분석
-- 지역 트렌드 분석
-
-**Risk Evaluation Agent**
-- 공급 리스크
-- 가격 변동 리스크
-- 거래 감소 리스크
-
-**Recommendation Agent**
-- 사용자 성향 기반 추천
-- 지역 기반 추천
-- 예산 기반 추천
-
-**Memory Agent**
-- 사용자 행동 패턴 저장
-- 투자 성향 저장
-
-**Evaluation Agent**
-- retrieval relevance 평가
-- hallucination 모니터링
-- prompt 비교 평가
-
----
-
-## 5-3. Agent Workflow Orchestration
-
-
-User Input
-→ Intent Analysis
-→ Retrieval Agent
-→ Memory Agent
-→ Context Assembly
-→ Analysis Agent
-→ Risk Evaluation Agent
-→ Model Router
-→ LLM Generation
-→ Evaluation Agent
-→ Streaming Response
-
-
----
-
-## 5-4. Long-term Memory
-
-### 저장 데이터
-- 관심 지역
-- 반복 조회 지역
-- 가격대 선호
-- 투자/실거주 성향
-- 신축 선호 여부
-- 조회 패턴
-
-### 활용
-- Personalized Retrieval 강화
-- 사용자 Context 유지
-- 반복 탐색 감소
-- 개인화 추천
-
----
-
-## 5-5. Multi-LLM Model Router
-
-### 목적
-작업별 최적 모델 선택
-
-### Routing 예시
-
-| 작업 | 모델 |
-|------|------|
-| 단순 요약 | Local sLM |
-| 빠른 브리핑 | Small LLM |
-| 투자 분석 | GPT-4급 |
-| 뉴스 분석 | GPT-4o-mini |
-
-### Routing 기준
-- latency
-- cost
-- quality
-- token usage
-- fallback
-
-### Hybrid Serving
-- OpenAI (고품질)
-- Ollama (로컬)
-- Dynamic Routing
-
----
-
-## 5-6. Prompt Runtime
-
-### Prompt Versioning
-- Prompt 템플릿 버전 관리
-- A/B 테스트
-- 실험 기반 개선
-
-### Context Composition
-- Retrieval Context
-- User Memory
-- Market Summary
-- Region Stats
-- Agent Instructions
-
----
-
-## 5-7. AI Evaluation Platform
-
-### 평가 항목
-- retrieval relevance
-- response quality
-- reasoning quality
-- hallucination ratio
-- recommendation relevance
-
-### 기능
-- Prompt 평가
-- Response scoring
-- A/B 비교
-- Retrieval 품질 측정
-
----
-
-## 5-8. AI Observability
-
-### 수집 데이터
-- token usage
-- latency
-- retrieval score
-- retry count
-- fallback rate
-- streaming duration
-
-### 목적
-- 비용 분석
-- 성능 비교
-- 장애 분석
-- Prompt 최적화
-
----
-
-# 6. 시스템 아키텍처
-
-
-Flutter App
-↓
-Spring API Server
-↓
-Kafka Event Publish
-↓
-AI Runtime
-├ Retrieval Agent
-├ Analysis Agent
-├ Risk Evaluation Agent
-├ Recommendation Agent
-├ Memory Agent
-└ Evaluation Agent
-↓
-Prompt Runtime
-↓
-Model Router
-↓
-LLM Providers
-├ OpenAI
-├ Ollama
-└ Local sLM
-↓
-RAG Pipeline
-↓
-SSE Streaming Response
-
-
----
-
-# 7. Event-driven AI Runtime
-
-### Events
-- conversation-started
-- retrieval-completed
-- analysis-generated
-- memory-updated
-- evaluation-generated
-- streaming-completed
-- fallback-triggered
-
-### Flow
-
-User Request
-→ Kafka Event Publish
-→ Agent Processing
-→ Prompt Runtime
-→ Model Routing
-→ LLM Response
-→ Streaming Response
-
-
----
-
-# 8. Streaming Architecture (SSE)
-
-### 목적
-- 실시간 응답 UX
-- 긴 분석 응답 개선
-- AI 브리핑 경험
-
-### 고려사항
-- reconnect 처리
-- emitter lifecycle
-- multi-instance 대응
-- timeout 처리
-
----
-
-# 9. 기술 스택
+## 기술 스택
 
 | 영역 | 기술 |
-|------|------|
+| --- | --- |
 | Backend | Java 21, Spring Boot |
-| AI Runtime | LangChain4j |
-| Mobile | Flutter |
-| Admin | React + Vite |
-| DB | PostgreSQL |
-| Vector DB | pgvector |
-| Cache | Redis |
-| Queue | Kafka |
-| Streaming | SSE |
-| LLM | OpenAI, Ollama |
-| Infra | Docker Compose |
+| Auth | Spring Security, OAuth2, JWT |
+| Database | PostgreSQL, pgvector |
+| Migration | Flyway |
+| AI | OpenAI, Ollama |
+| Streaming | Server-Sent Events |
+| Frontend | React + Vite |
 
 ---
 
-# 10. 핵심 설계 포인트
+## RAG 흐름
 
-1. AI Runtime 구조
-2. Personalized RAG
-3. Multi-model Routing
-4. Long-term Memory
-5. 운영 가능한 AI 시스템
-    - Streaming
-    - Retry
-    - Monitoring
-    - Evaluation
-    - Prompt Versioning
-    - Token tracking
+```text
+실거래 원본 데이터
+-> RAG 문서 생성
+-> 임베딩 생성
+-> 사용자 질문
+-> Query Rewrite
+-> 벡터 검색
+-> RAG Prompt 구성
+-> LLM 답변 생성
+-> 일반 응답 또는 SSE 스트리밍
+```
 
----
-
-# 11. 기대 효과
-
-- Java/Spring 기반 AI Platform 경험
-- RAG / Retrieval 설계 경험
-- Multi-Agent Runtime 경험
-- Long-term Memory 설계 경험
-- Multi-model 운영 경험
-- AI Evaluation Platform 구축 경험
-- Event-driven AI Runtime 경험
-- 운영 가능한 AI 시스템 설계 경험
+검색 결과가 없을 경우 keyword fallback을 사용합니다. fallback 결과는 실제 벡터 유사도가 아니므로 관련도가 고정값으로 표시될 수 있습니다.
 
 ---
 
-# 12. 향후 확장 방향
+## 주요 API
 
-- MCP 기반 Tool 연동
-- 실시간 정책 분석
-- 지도 기반 분석
-- 음성 부동산 상담
-- Multi-domain Agent 확장
-- AI 자동 리포트 생성
+### RAG
+
+| Method | Path | 설명 |
+| --- | --- | --- |
+| POST | `/api/v1/rag/search` | RAG 문서 검색 |
+| POST | `/api/v1/rag/ask` | RAG 기반 답변 생성 |
+| POST | `/api/v1/rag/ask/stream` | RAG 기반 SSE 스트리밍 답변 |
+| POST | `/api/v1/rag/documents/deals` | 실거래 데이터를 RAG 문서로 변환 |
+| POST | `/api/v1/rag/documents/embeddings` | 누락 임베딩 생성 |
+| POST | `/api/v1/rag/documents/sync` | 문서 생성과 임베딩 생성 동기화 |
+| GET | `/api/v1/rag/documents/stats` | RAG 인덱스 상태 조회 |
+
+### 사용자 AI 메모리
+
+| Method | Path | 설명 |
+| --- | --- | --- |
+| GET | `/api/v1/rag/memory/me` | 내 AI 메모리 조회 |
+| GET | `/api/v1/rag/memory/me/events` | 최근 RAG 사용 이벤트 조회 |
+| PUT | `/api/v1/rag/memory/me` | 내 AI 메모리 수정 |
+| DELETE | `/api/v1/rag/memory/me` | 내 AI 메모리 초기화 |
+
+### 인증
+
+| Method | Path | 설명 |
+| --- | --- | --- |
+| GET | `/api/v1/auth/login/{provider}` | OAuth2 로그인 시작 |
+| GET | `/api/v1/auth/token/exchange` | OAuth 임시 code를 JWT로 교환 |
+| POST | `/api/v1/auth/reissue` | access token 재발급 |
+| POST | `/api/v1/auth/logout` | 로그아웃 |
+| DELETE | `/api/v1/users` | 회원 탈퇴 |
 
 ---
 
-# 13. 프로젝트 핵심 문장
+## AI Provider
 
-> “부동산 실거래가 및 지역 데이터를 기반으로,  
-RAG · Agent · Long-term Memory · Model Routing 구조를 활용한  
-AI Runtime Platform을 설계 및 운영”
+RealtyOS는 임베딩과 답변 생성을 provider/model 단위로 분리합니다.
+
+- 임베딩 provider: OpenAI, Ollama
+- 답변 provider: OpenAI, Ollama
+- 같은 문서에 대해 여러 provider/model 임베딩을 동시에 저장 가능
+- 검색 요청의 provider/model은 저장된 임베딩 조합과 일치해야 함
+
+예를 들어 Ollama 임베딩으로 검색하려면 `OLLAMA / nomic-embed-text` 조합으로 임베딩이 생성되어 있어야 합니다.
+
+---
+
+## SSE 스트리밍
+
+`/api/v1/rag/ask/stream`은 답변 생성 과정을 SSE 이벤트로 전송합니다.
+
+```text
+memory_loaded
+retrieval_started
+retrieval_completed
+model_selected
+token
+completed
+```
+
+프론트엔드는 `token` 이벤트를 받을 때마다 답변 텍스트를 누적 표시합니다.
+
+---
+
+## 사용자 AI 메모리
+
+로그인 사용자의 RAG 사용 패턴을 저장하고 다음 검색에 반영합니다.
+
+저장되는 주요 정보:
+
+- 선호 지역
+- 최근 조회 지역
+- 가격대
+- 최근 질문
+- 검색 이벤트 이력
+
+이를 통해 반복 질문에서 사용자의 맥락을 유지하고, 검색 조건을 개인화합니다.
+
+---
+
+## 자동 동기화
+
+스케줄러가 실거래 데이터를 수집하고 RAG 문서/임베딩 동기화를 수행합니다.
+
+- 실거래 데이터 정기 수집
+- RAG 문서 생성/갱신
+- 누락 임베딩 생성
+- 실거래 문서 변경 시 기존 임베딩 무효화
+
+---
+
+## 실행 개요
+
+로컬 실행에는 다음이 필요합니다.
+
+- Java 21
+- PostgreSQL + pgvector
+- Ollama 또는 OpenAI API key
+
+기본 실행 흐름:
+
+```text
+1. PostgreSQL/pgvector 실행
+2. API 서버 실행
+3. 실거래 데이터 수집
+4. RAG 문서 생성
+5. 임베딩 생성
+6. RAG 검색/답변 API 호출
+```
+
+세부 환경값은 `application.yml`, `application-loc.yml`을 기준으로 관리합니다.
+
+---
+
+## 주요 모듈
+
+```text
+auth        OAuth2, JWT, 로그인/토큰
+common      공통 설정, AI client, model router
+rag         RAG 검색, 문서/임베딩, 답변, 메모리
+realestate  실거래/분양 데이터 수집
+user        사용자 설정
+```
+
+---
+
+## 현재 구현 기준
+
+- RAG 문서와 임베딩은 PostgreSQL/pgvector에 저장
+- OpenAI와 Ollama 임베딩 동시 운영 가능
+- 지역 검색은 실제 거래 소재지 기준으로 필터링
+- 자연어 면적 표현을 제곱미터 조건으로 변환
+- SSE 스트리밍 답변 제공
+- OAuth2 로그인 후 JWT 발급
+- 사용자 AI 메모리 저장 및 검색 조건 반영
+

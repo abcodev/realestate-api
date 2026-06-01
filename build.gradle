@@ -104,7 +104,8 @@ tasks.named('test') {
 			'rag.test.document-limit',
 			'rag.test.embedding-limit',
 			'rag.test.repeat-until-complete',
-			'rag.test.max-batches'
+			'rag.test.max-batches',
+			'rag.quality.enabled'
 	].each { key ->
 		if (System.getProperty(key) != null) {
 			systemProperty key, System.getProperty(key)
