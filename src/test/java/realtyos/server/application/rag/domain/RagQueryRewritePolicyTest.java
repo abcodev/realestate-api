@@ -84,4 +84,11 @@ class RagQueryRewritePolicyTest {
 
         assertThat(result.condition().region()).isEqualTo("월영동");
     }
+
+    @Test
+    void stripsRegionParticleForCandidateRecommendationQuery() {
+        RagQueryRewriteResult result = policy.rewrite("마포에서 갈아타기 후보를 비교해줘", null);
+
+        assertThat(result.condition().region()).isEqualTo("마포");
+    }
 }

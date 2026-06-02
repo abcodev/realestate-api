@@ -227,18 +227,51 @@ public class DealAnalysisService {
         }
         sql.append("""
                  AND (
-                    d.umd_name ILIKE ?
-                    OR d.sgg_code IN (
-                        SELECT DISTINCT substring(b.bgd_code, 1, 5)
-                        FROM real_estate_bgd_code b
-                        WHERE b.bgd_name ILIKE ?
-                        AND b.bgd_code NOT LIKE '__00000000'
+                    (
+                        EXISTS (
+                            SELECT 1
+                            FROM real_estate_sgg_code s
+                            WHERE s.sig_kor_nm IN (?, ?)
+                            OR s.full_nm ILIKE ?
+                        )
+                        AND d.sgg_code IN (
+                            SELECT s.sgg_cd
+                            FROM real_estate_sgg_code s
+                            WHERE s.sig_kor_nm IN (?, ?)
+                            OR s.full_nm ILIKE ?
+                        )
+                    )
+                    OR (
+                        NOT EXISTS (
+                            SELECT 1
+                            FROM real_estate_sgg_code s
+                            WHERE s.sig_kor_nm IN (?, ?)
+                            OR s.full_nm ILIKE ?
+                        )
+                        AND (
+                            d.umd_name IN (?, ?)
+                            OR d.umd_name ILIKE ?
+                            OR d.sgg_code IN (
+                                SELECT DISTINCT substring(b.bgd_code, 1, 5)
+                                FROM real_estate_bgd_code b
+                                WHERE (
+                                    b.bgd_name ILIKE ?
+                                    OR b.bgd_name ILIKE ?
+                                )
+                                AND b.bgd_code NOT LIKE '__00000000'
+                            )
+                        )
                     )
                  )
                 """);
-        String value = like(normalizedRegion);
-        args.add(value);
-        args.add(value);
+        addSggRegionArgs(args, normalizedRegion);
+        addSggRegionArgs(args, normalizedRegion);
+        addSggRegionArgs(args, normalizedRegion);
+        args.add(normalizedRegion);
+        args.add(normalizedRegion + "동");
+        args.add(like(normalizedRegion));
+        args.add(like(normalizedRegion));
+        args.add(like(normalizedRegion + "동"));
     }
 
     private LocalDate toStartDate(Integer year, Integer month) {
@@ -275,5 +308,11 @@ public class DealAnalysisService {
 
     private boolean isDongLevelRegion(String value) {
         return value.endsWith("동") || value.endsWith("읍") || value.endsWith("면") || value.endsWith("리");
+    }
+
+    private void addSggRegionArgs(List<Object> args, String region) {
+        args.add(region);
+        args.add(region + "구");
+        args.add("% " + region + "구");
     }
 }

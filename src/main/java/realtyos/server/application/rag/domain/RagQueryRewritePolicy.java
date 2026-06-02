@@ -16,6 +16,7 @@ public class RagQueryRewritePolicy {
     private static final Pattern YEAR_MONTH_PATTERN = Pattern.compile("(20\\d{2})\\s*년(?:\\s*(\\d{1,2})\\s*월)?");
     private static final Pattern ADMIN_REGION_PATTERN = Pattern.compile("([가-힣]{2,}(?:구|동|읍|면|리))");
     private static final Pattern LEADING_REGION_PATTERN = Pattern.compile("^([가-힣]{2,10})(?:\\s|$)");
+    private static final Pattern REGION_PARTICLE_PATTERN = Pattern.compile("(에서|으로|로|의)$");
     private static final double SQUARE_METERS_PER_PYEONG = 3.305785;
 
     public RagQueryRewriteResult rewrite(String query, RagSearchCondition explicitCondition) {
@@ -123,15 +124,15 @@ public class RagQueryRewritePolicy {
     }
 
     private String inferLeadingRegion(String text) {
-        if (!containsAny(text, "시세", "최근", "거래", "흐름", "아파트", "어때", "어떤가")) {
+        if (!containsAny(text, "시세", "최근", "거래", "흐름", "아파트", "어때", "어떤가", "후보", "추천", "갈아타기", "비교")) {
             return null;
         }
         Matcher matcher = LEADING_REGION_PATTERN.matcher(text);
         if (!matcher.find()) {
             return null;
         }
-        String candidate = matcher.group(1);
-        if (containsAny(candidate, "최근", "거래", "아파트", "시세")) {
+        String candidate = REGION_PARTICLE_PATTERN.matcher(matcher.group(1)).replaceFirst("");
+        if (candidate.length() < 2 || containsAny(candidate, "최근", "거래", "아파트", "시세", "후보", "추천", "비교")) {
             return null;
         }
         return candidate;

@@ -35,7 +35,7 @@ public class RealestateDecisionService {
             return false;
         }
         return containsAny(query, "추천", "후보", "의사결정", "살만", "매수", "투자", "실거주", "비교", "골라", "어디", "중",
-                "시세", "흐름", "어때", "어떤가", "괜찮", "나아");
+                "시세", "흐름", "어때", "어떤가", "괜찮", "나아", "갈아타기");
     }
 
     public DecisionResult decide(String query, Integer limit, RagSearchCondition explicitCondition) {
@@ -509,6 +509,9 @@ public class RealestateDecisionService {
         if (regionTargets.size() > 1) {
             return regionTargets;
         }
+        if (isSingleRegionCandidateComparison(query)) {
+            return List.of();
+        }
 
         String normalized = query
                 .replace("시세", " ")
@@ -521,6 +524,10 @@ public class RealestateDecisionService {
                 .replace("해달라고", " ")
                 .replace("비교해줘", " ")
                 .replace("비교해달라", " ")
+                .replace("갈아타기", " ")
+                .replace("후보를", " ")
+                .replace("후보", " ")
+                .replace("추천", " ")
                 .replace("더", " ")
                 .trim();
         List<ComparisonTarget> targets = new ArrayList<>();
@@ -539,6 +546,15 @@ public class RealestateDecisionService {
             }
         }
         return targets.size() > 1 ? targets : List.of();
+    }
+
+    private boolean isSingleRegionCandidateComparison(String query) {
+        if (query == null) {
+            return false;
+        }
+        boolean candidateIntent = containsAny(query, "후보", "추천", "갈아타기");
+        boolean explicitPairConnector = containsAny(query, " vs ", "VS", "와", "과", "랑", "하고", "이랑");
+        return candidateIntent && !explicitPairConnector;
     }
 
     private List<ComparisonTarget> inferAdministrativeRegionTargets(String query) {
