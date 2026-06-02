@@ -30,14 +30,6 @@ public class RealestateDecisionService {
     private final DecisionResultFormatter decisionResultFormatter;
     private final RagQueryRewritePolicy queryRewritePolicy = new RagQueryRewritePolicy();
 
-    public boolean supports(String query) {
-        if (query == null || query.isBlank()) {
-            return false;
-        }
-        return containsAny(query, "추천", "후보", "의사결정", "살만", "매수", "투자", "실거주", "비교", "골라", "어디", "중",
-                "시세", "흐름", "어때", "어떤가", "괜찮", "나아", "갈아타기");
-    }
-
     public DecisionResult decide(String query, Integer limit, RagSearchCondition explicitCondition) {
         List<ComparisonTarget> comparisonTargets = inferComparisonTargets(query);
         List<String> comparisonRegions = queryRewritePolicy.inferComparisonRegions(query);

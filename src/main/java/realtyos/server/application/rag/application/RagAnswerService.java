@@ -28,17 +28,20 @@ public class RagAnswerService {
     private final RagAnswerPromptBuilder promptBuilder;
     private final RagAnswerGuardrail guardrail;
     private final RealestateDecisionService decisionService;
+    private final RagAnswerRouter answerRouter;
 
     public RagAnswer answer(Long userId, String query, Integer topK, String embeddingProvider, String embeddingModel,
                             String answerProvider, String answerModel, RagSearchCondition condition) {
         Optional<UserAiMemory> memory = memoryService.find(userId);
         RagSearchCondition personalizedCondition = memoryService.merge(userId, query, condition);
 
-        if (decisionService.supports(query)) {
+        RagAnswerRoute route = answerRouter.route(query);
+        if (route.usesDecisionEngine()) {
             DecisionResult decision = decisionService.decide(query, topK, personalizedCondition);
             List<RagAnswerSource> sources = DecisionAnswerSourceMapper.from(decision);
             String answer = decisionService.formatAnswer(decision);
-            memoryService.record(userId, query, decision.condition(), answer, sources, decision, "DECISION_ENGINE");
+            memoryService.record(userId, query, decision.condition(), answer, sources, decision, "DECISION_ENGINE:" + route.type());
+            log.info("RAG answer routed to decision engine - route: {}, reason: {}, query: {}", route.type(), route.reason(), query);
             return new RagAnswer(
                     answer,
                     sources,

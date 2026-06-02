@@ -28,6 +28,7 @@ public class RagAnswerStreamingService {
     private final RagAnswerPromptBuilder promptBuilder;
     private final RagAnswerGuardrail guardrail;
     private final RealestateDecisionService decisionService;
+    private final RagAnswerRouter answerRouter;
 
     public void stream(Long userId, String query, Integer topK, String embeddingProvider, String embeddingModel,
                        String answerProvider, String answerModel, RagSearchCondition condition,
@@ -40,11 +41,17 @@ public class RagAnswerStreamingService {
 
         RagSearchCondition personalizedCondition = memoryService.merge(userId, query, condition);
 
-        if (decisionService.supports(query)) {
+        RagAnswerRoute route = answerRouter.route(query);
+        send(eventConsumer, "route_selected", Map.of(
+                "route", route.type().name(),
+                "reason", route.reason()
+        ));
+
+        if (route.usesDecisionEngine()) {
             DecisionResult decision = decisionService.decide(query, topK, personalizedCondition);
             List<RagAnswerSource> sources = DecisionAnswerSourceMapper.from(decision);
             String answer = decisionService.formatAnswer(decision);
-            memoryService.record(userId, query, decision.condition(), answer, sources, decision, "DECISION_ENGINE");
+            memoryService.record(userId, query, decision.condition(), answer, sources, decision, "DECISION_ENGINE:" + route.type());
             send(eventConsumer, "retrieval_started", Map.of("query", query));
             send(eventConsumer, "retrieval_completed", Map.of("sourceCount", sources.size()));
             send(eventConsumer, "token", Map.of("text", answer));
@@ -94,20 +101,20 @@ public class RagAnswerStreamingService {
         }
 
         String prompt = promptBuilder.build(query, searchResults, memory.map(UserAiMemory::toPromptContext).orElse(null));
-        RagAiRoute route = aiGateway.route(ENTITY_TYPE, prompt, answerProvider, answerModel);
+        RagAiRoute aiRoute = aiGateway.route(ENTITY_TYPE, prompt, answerProvider, answerModel);
         send(eventConsumer, "model_selected", Map.of(
-                "provider", route.provider(),
-                "model", route.model() == null ? "" : route.model(),
-                "reason", route.reason()
+                "provider", aiRoute.provider(),
+                "model", aiRoute.model() == null ? "" : aiRoute.model(),
+                "reason", aiRoute.reason()
         ));
 
         StringBuilder answer = new StringBuilder();
-        aiGateway.stream(route, ENTITY_TYPE, prompt, chunk -> {
+        aiGateway.stream(aiRoute, ENTITY_TYPE, prompt, chunk -> {
             answer.append(chunk);
             send(eventConsumer, "token", Map.of("text", chunk));
         });
 
-        memoryService.record(userId, query, personalizedCondition, answer.toString(), sources, null, RagModelName.of(route.provider(), route.model()));
+        memoryService.record(userId, query, personalizedCondition, answer.toString(), sources, null, RagModelName.of(aiRoute.provider(), aiRoute.model()));
         send(eventConsumer, "completed", Map.of(
                 "answer", answer.toString(),
                 "sourceCount", sources.size(),
