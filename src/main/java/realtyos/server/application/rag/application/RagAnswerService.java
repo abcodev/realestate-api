@@ -72,19 +72,9 @@ public class RagAnswerService {
         String answer = aiGateway.askRouted(ENTITY_TYPE, prompt, answerProvider, answerModel);
         answer = guardrail.finalizeAnswer(answer, searchResults);
 
-        memoryService.record(userId, query, personalizedCondition, answer, sources, null, modelName(answerProvider, answerModel));
+        memoryService.record(userId, query, personalizedCondition, answer, sources, null, RagModelName.of(answerProvider, answerModel));
         log.info("RAG answer completed - query: {}, sourceCount: {}", query, sources.size());
         return new RagAnswer(answer, sources);
-    }
-
-    private String modelName(String provider, String model) {
-        if (provider == null || provider.isBlank()) {
-            return model == null || model.isBlank() ? null : model;
-        }
-        if (model == null || model.isBlank()) {
-            return provider;
-        }
-        return provider + ":" + model;
     }
 
 }

@@ -107,7 +107,7 @@ public class RagAnswerStreamingService {
             send(eventConsumer, "token", Map.of("text", chunk));
         });
 
-        memoryService.record(userId, query, personalizedCondition, answer.toString(), sources, null, modelName(route.provider(), route.model()));
+        memoryService.record(userId, query, personalizedCondition, answer.toString(), sources, null, RagModelName.of(route.provider(), route.model()));
         send(eventConsumer, "completed", Map.of(
                 "answer", answer.toString(),
                 "sourceCount", sources.size(),
@@ -117,15 +117,5 @@ public class RagAnswerStreamingService {
 
     private void send(Consumer<RagStreamEvent> eventConsumer, String eventName, Object data) {
         eventConsumer.accept(new RagStreamEvent(eventName, data));
-    }
-
-    private String modelName(String provider, String model) {
-        if (provider == null || provider.isBlank()) {
-            return model == null || model.isBlank() ? null : model;
-        }
-        if (model == null || model.isBlank()) {
-            return provider;
-        }
-        return provider + ":" + model;
     }
 }
