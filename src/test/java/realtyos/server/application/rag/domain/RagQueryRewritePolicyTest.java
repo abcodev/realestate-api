@@ -52,4 +52,13 @@ class RagQueryRewritePolicyTest {
         assertThat(result.condition().minArea()).isEqualTo(99.17);
         assertThat(result.condition().maxArea()).isEqualTo(132.23);
     }
+
+    @Test
+    void doesNotInferSingleRegionForMultiRegionComparison() {
+        RagQueryRewriteResult result = policy.rewrite("대치동과 잠실 20평대를 비교해줘", null);
+
+        assertThat(result.condition().region()).isNull();
+        assertThat(result.condition().minArea()).isEqualTo(66.12);
+        assertThat(result.condition().maxArea()).isEqualTo(99.17);
+    }
 }

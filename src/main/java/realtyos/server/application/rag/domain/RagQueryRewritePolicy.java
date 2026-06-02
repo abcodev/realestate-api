@@ -1,7 +1,9 @@
 package realtyos.server.application.rag.domain;
 
 import java.time.Year;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,17 +27,55 @@ public class RagQueryRewritePolicy {
             "영등포구", "영등포",
             "분당구", "분당",
             "판교",
-            "잠실",
+            "잠실동", "잠실",
             "반포",
             "압구정",
-            "대치",
+            "대치동", "대치",
             "목동"
+    );
+    private static final Map<String, String> REGION_CANONICAL_NAMES = Map.ofEntries(
+            Map.entry("강남구", "강남구"),
+            Map.entry("강남", "강남구"),
+            Map.entry("서초구", "서초구"),
+            Map.entry("서초", "서초구"),
+            Map.entry("송파구", "송파구"),
+            Map.entry("송파", "송파구"),
+            Map.entry("마포구", "마포구"),
+            Map.entry("마포", "마포구"),
+            Map.entry("용산구", "용산구"),
+            Map.entry("용산", "용산구"),
+            Map.entry("성동구", "성동구"),
+            Map.entry("성동", "성동구"),
+            Map.entry("영등포구", "영등포구"),
+            Map.entry("영등포", "영등포구"),
+            Map.entry("분당구", "분당구"),
+            Map.entry("분당", "분당구"),
+            Map.entry("판교", "판교"),
+            Map.entry("잠실동", "잠실동"),
+            Map.entry("잠실", "잠실동"),
+            Map.entry("반포", "반포동"),
+            Map.entry("압구정", "압구정동"),
+            Map.entry("대치동", "대치동"),
+            Map.entry("대치", "대치동"),
+            Map.entry("목동", "목동")
     );
 
     public RagQueryRewriteResult rewrite(String query, RagSearchCondition explicitCondition) {
         RagSearchCondition inferred = infer(query);
         RagSearchCondition merged = merge(explicitCondition, inferred);
         return new RagQueryRewriteResult(rewriteQuery(query, merged), merged);
+    }
+
+    public List<String> inferComparisonRegions(String query) {
+        String text = query == null ? "" : query;
+        if (!containsAny(text, "비교", "차이", "대비", " vs ", "VS", "와", "과", "랑", "하고")) {
+            return List.of();
+        }
+        LinkedHashMap<String, String> regions = new LinkedHashMap<>();
+        REGION_KEYWORDS.stream()
+                .filter(text::contains)
+                .forEach(keyword -> regions.putIfAbsent(canonicalRegion(keyword), canonicalRegion(keyword)));
+        return regions.size() > 1 ? List.copyOf(regions.values()) : List.of();
     }
 
     private RagSearchCondition infer(String query) {
@@ -98,10 +138,17 @@ public class RagQueryRewritePolicy {
     }
 
     private String inferRegion(String text) {
-        return REGION_KEYWORDS.stream()
+        List<String> matchedRegions = REGION_KEYWORDS.stream()
                 .filter(text::contains)
-                .findFirst()
-                .orElse(null);
+                .toList();
+        if (matchedRegions.size() > 1 && containsAny(text, "비교", "차이", "대비", " vs ", "VS", "와", "과", "랑", "하고")) {
+            return null;
+        }
+        return matchedRegions.stream().findFirst().orElse(null);
+    }
+
+    private String canonicalRegion(String region) {
+        return REGION_CANONICAL_NAMES.getOrDefault(region, region);
     }
 
     private PriceRange inferPriceRange(String text) {

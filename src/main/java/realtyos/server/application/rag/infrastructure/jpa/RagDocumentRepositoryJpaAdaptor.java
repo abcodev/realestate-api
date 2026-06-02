@@ -48,6 +48,17 @@ public class RagDocumentRepositoryJpaAdaptor implements RagDocumentRepository {
             Map.entry("분당", "41135"),
             Map.entry("판교", "41135")
     );
+    private static final Map<String, String> DONG_ALIASES = Map.ofEntries(
+            Map.entry("대치동", "대치동"),
+            Map.entry("대치", "대치동"),
+            Map.entry("잠실동", "잠실동"),
+            Map.entry("잠실", "잠실동"),
+            Map.entry("반포동", "반포동"),
+            Map.entry("반포", "반포동"),
+            Map.entry("압구정동", "압구정동"),
+            Map.entry("압구정", "압구정동"),
+            Map.entry("목동", "목동")
+    );
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -564,6 +575,12 @@ public class RagDocumentRepositoryJpaAdaptor implements RagDocumentRepository {
         if (regionCode != null) {
             sql.append(" AND d.sgg_code = ? ");
             args.add(regionCode);
+            return;
+        }
+        String dongName = DONG_ALIASES.get(normalizedRegion);
+        if (dongName != null) {
+            sql.append(" AND d.umd_name ILIKE ? ");
+            args.add(like(dongName));
             return;
         }
 

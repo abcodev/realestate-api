@@ -43,12 +43,17 @@ public class RagAnswerService {
             return new RagAnswer(guardrail.noMatchingEvidenceMessage(), List.of());
         }
 
-        String prompt = promptBuilder.build(query, searchResults, memory.map(UserAiMemory::toPromptContext).orElse(null));
-        String answer = aiGateway.askRouted(ENTITY_TYPE, prompt, answerProvider, answerModel);
-        answer = guardrail.finalizeAnswer(answer, searchResults);
         List<RagAnswerSource> sources = searchResults.stream()
                 .map(RagAnswerSource::from)
                 .toList();
+        if (guardrail.shouldUseEvidenceSummary(query)) {
+            memoryService.record(userId, query, personalizedCondition);
+            return new RagAnswer(guardrail.buildEvidenceSummary(searchResults), sources);
+        }
+
+        String prompt = promptBuilder.build(query, searchResults, memory.map(UserAiMemory::toPromptContext).orElse(null));
+        String answer = aiGateway.askRouted(ENTITY_TYPE, prompt, answerProvider, answerModel);
+        answer = guardrail.finalizeAnswer(answer, searchResults);
 
         memoryService.record(userId, query, personalizedCondition);
         log.info("RAG answer completed - query: {}, sourceCount: {}", query, sources.size());

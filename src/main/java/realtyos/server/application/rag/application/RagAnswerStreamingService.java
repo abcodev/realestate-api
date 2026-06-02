@@ -58,6 +58,21 @@ public class RagAnswerStreamingService {
             return;
         }
 
+        List<RagAnswerSource> sources = searchResults.stream()
+                .map(RagAnswerSource::from)
+                .toList();
+        if (guardrail.shouldUseEvidenceSummary(query)) {
+            memoryService.record(userId, query, personalizedCondition);
+            String answer = guardrail.buildEvidenceSummary(searchResults);
+            send(eventConsumer, "token", Map.of("text", answer));
+            send(eventConsumer, "completed", Map.of(
+                    "answer", answer,
+                    "sourceCount", sources.size(),
+                    "sources", sources
+            ));
+            return;
+        }
+
         String prompt = promptBuilder.build(query, searchResults, memory.map(UserAiMemory::toPromptContext).orElse(null));
         RagAiRoute route = aiGateway.route(ENTITY_TYPE, prompt, answerProvider, answerModel);
         send(eventConsumer, "model_selected", Map.of(
@@ -72,9 +87,6 @@ public class RagAnswerStreamingService {
             send(eventConsumer, "token", Map.of("text", chunk));
         });
 
-        List<RagAnswerSource> sources = searchResults.stream()
-                .map(RagAnswerSource::from)
-                .toList();
         memoryService.record(userId, query, personalizedCondition);
         send(eventConsumer, "completed", Map.of(
                 "answer", answer.toString(),
