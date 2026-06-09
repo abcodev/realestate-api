@@ -267,5 +267,5 @@ LLM이 근거에 없는 지역이나 단지를 만들어내지 않도록 guardra
 - RAG를 단순 데모가 아니라 실제 도메인 데이터 검색/분석 흐름으로 구성
 - LLM 답변 품질 문제를 deterministic 분석 엔진과 guardrail로 보완
 - 대량 데이터, 임베딩, provider 선택, 비용/성능 trade-off를 고려한 설계
-- Spring Boot 기반 인증, API, persistence, streaming 기능의 end-to-end 구현
+- Spring Boot 기반 인증, API, persistence, SSE 기반 답변 streaming 기능
 - 기능 추가 이후에도 계층 의존과 책임 분리를 지속적으로 개선하는 리팩터링
